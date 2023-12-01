@@ -1,0 +1,10 @@
+.sum-block {
+    margin: 10px;
+}
+
+.sum-block span {
+    /* margin: 5px; */
+    
+    border: 1px dashed grey;
+    padding: 5px;
+}
