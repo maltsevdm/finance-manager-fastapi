@@ -1,0 +1,7 @@
+.cat-item {
+    border: 1px dashed grey;    
+    text-align: center;
+    width: 100px;
+    margin-right: 5px;
+    display: inline-block;
+}
