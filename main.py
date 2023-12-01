@@ -72,7 +72,7 @@ def unprotected_route():
 
 @app.get('/icons')
 def get_icons():
-    path = 'front-end/src/components/CategoryItem/icons'
+    path = 'static/src/components/CategoryItem/icons'
 
     f = []
     for (_, _, filenames) in walk(path):
@@ -84,7 +84,7 @@ def get_icons():
 
 @app.get('/icon/{icon_name}')
 def get_icon(icon_name: str):
-    icons_dir = 'front-end/src/components/CategoryItem/icons/'
+    icons_dir = 'static/src/components/CategoryItem/icons/'
     return FileResponse(icons_dir + icon_name)
 
 
