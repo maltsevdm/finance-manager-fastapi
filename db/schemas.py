@@ -2,7 +2,7 @@ import datetime
 
 from pydantic import BaseModel
 
-from db.models import CategoryGroup
+from db.models import CategoryGroup, OperationGroup
 
 
 class CategoryBase(BaseModel):
@@ -11,7 +11,7 @@ class CategoryBase(BaseModel):
 
 
 class CategoryCreate(CategoryBase):
-    pass
+    icon: str
 
 
 class CategoryRemove(CategoryBase):
@@ -43,6 +43,7 @@ class User(UserBase):
 
 
 class OperationCreate(BaseModel):
+    group: OperationGroup
     category_from: str
     category_to: str
     amount: int

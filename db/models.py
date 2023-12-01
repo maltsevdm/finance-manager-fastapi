@@ -16,6 +16,11 @@ class CategoryGroup(enum.Enum):
     bank = "bank"
 
 
+class OperationGroup(enum.Enum):
+    income = 'income'
+    expense = 'expense'
+
+
 class User(SQLAlchemyBaseUserTable[int], Base):
     id = Column(Integer, primary_key=True)
     email = Column(String, nullable=False)
@@ -35,6 +40,7 @@ class Category(Base):
     name: Mapped[str] = mapped_column(nullable=False)
     group: Mapped[CategoryGroup] = mapped_column(nullable=False)
     amount: Mapped[int] = mapped_column(nullable=False, default=0)
+    icon: Mapped[str]
 
     # owner = relationship("User", back_populates="items")
 
@@ -51,6 +57,7 @@ class Operation(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
+    group: Mapped[OperationGroup] = mapped_column(nullable=False)
     category_from: Mapped[str] = mapped_column(nullable=False)
     category_to: Mapped[str] = mapped_column(nullable=False)
     amount: Mapped[int] = mapped_column(nullable=False)

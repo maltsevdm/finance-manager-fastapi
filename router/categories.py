@@ -2,18 +2,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.manager import current_active_user
-from db import crud, core
+from db import core, models
 from db.database import async_session, get_async_session
 from db import schemas
-from db.models import User
+from db.models import User, CategoryGroup
 
 router = APIRouter()
-
-
-@router.get('/')
-async def read_categories():
-    async with async_session() as db:
-        return await crud.get_categories(db)
 
 
 @router.post('/add')
@@ -47,7 +41,7 @@ async def remove_category(
 
 @router.get('/all')
 async def read_categories_by_group(
-        group: str,
+        group: CategoryGroup,
         user: User = Depends(current_active_user),
         db: AsyncSession = Depends(get_async_session)
 ):

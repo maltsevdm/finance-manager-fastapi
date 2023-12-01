@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from sqlalchemy import update, select, delete, func
@@ -30,46 +31,55 @@ async def remove_category(db: AsyncSession, user_id: int, category: schemas.Cate
     await db.commit()
 
 
-async def update_category_amount(db: AsyncSession, user_id: int, category: schemas.CategoryUpdate):
-    stmt = (update(models.Category)
-            .values(amount=category.amount)
-            .filter_by(user_id=user_id, name=category.name, group=category.group))
-    await db.execute(stmt)
-    await db.commit()
-
-
 async def get_category_amount(db: AsyncSession, user_id: int, category: schemas.CategoryRead):
     query = (select(models.Category.amount)
              .filter_by(user_id=user_id, name=category.name, group=category.group))
     return (await db.execute(query)).scalars().first()
 
 
-async def get_categories_by_group(db: AsyncSession, user_id: int, group: str):
-    query = (select(models.Category).filter_by(user_id=user_id, group=group))
-    result = (await db.execute(query)).scalars().all()
+async def get_categories_by_group(db: AsyncSession, user_id: int, group: CategoryGroup):
+    query = (select(models.Category.name, models.Category.icon, models.Category.amount)
+             .filter_by(user_id=user_id, group=group))
+    result = (await db.execute(query)).all()
     return result
 
+
+async def update_category_amount(db: AsyncSession, user_id: int, category: schemas.CategoryUpdate):
+    stmt = (update(models.Category)
+            .values(amount=category.amount)
+            .filter_by(user_id=user_id, name=category.name, group=category.group))
+    await db.execute(stmt)
+
+async def get_group_amount_for_month(db: AsyncSession, user_id: int, group: models.OperationGroup):
+    query = select(func.sum(models.Operation.amount)).filter_by(user_id=user_id, group=group)
+    query = query.filter(models.Operation.date.between(datetime.date(2023, 12, 1,),
+                                                       datetime.date(2023, 12, 31)))
+    result = (await db.execute(query)).scalars().first()
+    if result is None:
+        return 0
+    return result
 
 async def add_operation(db: AsyncSession, user_id: int, operation: schemas.OperationCreate):
     query = (select(models.Category.amount)
              .filter_by(user_id=user_id, name=operation.category_from, group=CategoryGroup.bank))
-    result = (await db.execute(query)).scalars().first()
-    if result is None:
+    amount_cat_from = (await db.execute(query)).scalars().first()
+    if amount_cat_from is None:
         return 'error'
-    stmt = (update(models.Category)
-            .values(amount=result - operation.amount)
-            .filter_by(user_id=user_id, name=operation.category_from, group=CategoryGroup.bank))
-    await db.execute(stmt)
+    amount_cat_from -= operation.amount
+    await update_category_amount(db, user_id,
+                                 schemas.CategoryUpdate(name=operation.category_from, group=CategoryGroup.bank,
+                                                        amount=amount_cat_from))
 
     query = (select(models.Category.amount)
              .filter_by(user_id=user_id, name=operation.category_to, group=CategoryGroup.expense))
-    result = (await db.execute(query)).scalars().first()
-    if result is None:
+    amount_cat_to = (await db.execute(query)).scalars().first()
+    if amount_cat_to is None:
         return 'error'
-    stmt = (update(models.Category)
-            .values(amount=result + operation.amount)
-            .filter_by(user_id=user_id, name=operation.category_to, group=CategoryGroup.expense))
-    await db.execute(stmt)
+
+    amount_cat_to += operation.amount
+    await update_category_amount(db, user_id,
+                                 schemas.CategoryUpdate(name=operation.category_to, group=CategoryGroup.expense,
+                                                        amount=amount_cat_to))
 
     db_operation = models.Operation(user_id=user_id, **operation.__dict__)
     db.add(db_operation)
@@ -79,7 +89,16 @@ async def add_operation(db: AsyncSession, user_id: int, operation: schemas.Opera
 
     await db.commit()
 
-    return db_operation
+    expenses = await get_group_amount_for_month(db, user_id, models.OperationGroup.expense)
+    incomes = await get_group_amount_for_month(db, user_id, models.OperationGroup.income)
+
+    return {
+        'new_balance': new_balance,
+        'amount_category_from': amount_cat_from,
+        'amount_category_to': amount_cat_to,
+        'expenses': expenses,
+        'incomes': incomes
+    }
 
 
 async def add_user_to_balance(db: AsyncSession, user_id: int):

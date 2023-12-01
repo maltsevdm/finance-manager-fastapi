@@ -8,7 +8,6 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 
-import db.crud as crud
 from db.models import User
 import db.schemas as schemas
 from db.database import get_db
@@ -72,7 +71,7 @@ def unprotected_route():
 
 @app.get('/icons')
 def get_icons():
-    path = 'static/src/components/CategoryItem/icons'
+    path = '/icons'
 
     f = []
     for (_, _, filenames) in walk(path):
@@ -84,30 +83,8 @@ def get_icons():
 
 @app.get('/icon/{icon_name}')
 def get_icon(icon_name: str):
-    icons_dir = 'static/src/components/CategoryItem/icons/'
+    icons_dir = '/icons/'
     return FileResponse(icons_dir + icon_name)
-
-
-@app.post("/users/", response_model=schemas.User)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    db_user = crud.get_user_by_email(db, email=user.email)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.create_user(db=db, user=user)
-
-
-@app.get("/users/", response_model=list[schemas.User])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    users = crud.get_users(db, skip=skip, limit=limit)
-    return users
-
-
-@app.get("/users/{user_id}", response_model=schemas.User)
-def read_user(user_id: int, db: Session = Depends(get_db)):
-    db_user = crud.get_user(db, user_id=user_id)
-    if db_user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return db_user
 
 
 @app.get('/balance/')
