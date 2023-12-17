@@ -29,6 +29,41 @@ async def update_category_amount(
     return 'Category was successfully updated.'
 
 
+@router.patch('/change_name')
+async def change_name(
+        group: CategoryGroup,
+        old_name: str,
+        new_name: str,
+        user: User = Depends(current_active_user),
+        db: AsyncSession = Depends(get_async_session)
+):
+    await core.change_category_name(db, user.id, group, old_name, new_name)
+    return 'Category name was successfully changed.'
+
+
+@router.patch('/change_bank_amount')
+async def change_bank_amount(
+        name: str,
+        amount: int,
+        user: User = Depends(current_active_user),
+        db: AsyncSession = Depends(get_async_session)
+):
+    await core.change_bank_amount(db, user.id, name, amount)
+    return 'Bank amount was successfully changed.'
+
+
+@router.patch('/change_icon')
+async def change_icon(
+        group: CategoryGroup,
+        name: str,
+        icon: str,
+        user: User = Depends(current_active_user),
+        db: AsyncSession = Depends(get_async_session)
+):
+    await core.change_category_icon(db, user.id, group, name, icon)
+    return 'Category icon was successfully changed.'
+
+
 @router.delete('/delete')
 async def remove_category(
         category: schemas.CategoryRemove,

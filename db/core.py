@@ -13,7 +13,8 @@ from db import schemas
 
 categories_start_pack = [
     schemas.CategoryCreate(name='Продукты', group=CategoryGroup.expense, icon='products.png', position=1),
-    schemas.CategoryCreate(name='Еда вне дома', group=CategoryGroup.expense, icon='icons8-food-bar-100.png', position=2),
+    schemas.CategoryCreate(name='Еда вне дома', group=CategoryGroup.expense, icon='icons8-food-bar-100.png',
+                           position=2),
     schemas.CategoryCreate(name='Транспорт', group=CategoryGroup.expense, icon='transport.png', position=3),
     schemas.CategoryCreate(name='Услуги', group=CategoryGroup.expense, icon='icons8-scissors-100.png', position=4),
     schemas.CategoryCreate(name='Прочее', group=CategoryGroup.expense, icon='icons8-other-100.png', position=5),
@@ -167,6 +168,25 @@ async def prepare_db_for_user(db: AsyncSession, user_id: int):
                     name=name, group=group, icon=icon, amount=amount if group == CategoryGroup.bank else 0
                 )
             )
+
+
+async def change_category_name(db: AsyncSession, user_id: int, group: CategoryGroup, old_name: str, new_name: str):
+    stmt = update(models.Category).values(name=new_name).filter_by(user_id=user_id, group=group, name=old_name)
+    await db.execute(stmt)
+    await db.commit()
+
+
+async def change_category_icon(db: AsyncSession, user_id: int, group: CategoryGroup, name: str, icon: str):
+    stmt = update(models.Category).values(icon=icon).filter_by(user_id=user_id, group=group, name=name)
+    await db.execute(stmt)
+    await db.commit()
+
+
+async def change_bank_amount(db: AsyncSession, user_id: int, name: str, amount: int):
+    stmt = update(models.Category).values(amount=amount).filter_by(
+        user_id=user_id, group=CategoryGroup.bank, name=name, date=utils.get_start_month_date())
+    await db.execute(stmt)
+    await db.commit()
 
 
 async def test():
