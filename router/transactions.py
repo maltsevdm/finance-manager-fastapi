@@ -11,8 +11,8 @@ router = APIRouter()
 
 
 @router.post('/add')
-async def add_operation(
-        operation: schemas.OperationCreate,
+async def add_transaction(
+        operation: schemas.TransactionCreate,
         user: User = Depends(current_active_user),
         db: AsyncSession = Depends(get_async_session)
 ):
@@ -24,4 +24,4 @@ async def get_amount_group_for_month(
         user: User = Depends(current_active_user),
         db: AsyncSession = Depends(get_async_session)
 ):
-    return await core.get_group_amount_for_month(db, user.id, group)
+    return await core.get_transactions_by_group(db, user.id, group)

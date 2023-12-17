@@ -130,6 +130,6 @@ def get_balance(user_id: int, db: Session = Depends(get_db)):
     return balance if balance else {'message': 'User not found.'}
 
 
-@app.post('/balance/', response_model=schemas.Balance)
+@app.post('/balance/', response_model=schemas.Bank)
 def set_balance(balance: schemas.BalanceCreate, db: Session = Depends(get_db)):
     return crud.set_balance(db, balance)

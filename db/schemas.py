@@ -12,14 +12,18 @@ class CategoryBase(BaseModel):
 
 class CategoryCreate(CategoryBase):
     icon: str
+    amount: int = 0
+    position: int
 
 
 class CategoryRemove(CategoryBase):
     pass
 
 
-class CategoryRead(CategoryBase):
-    pass
+class CategoryRead(BaseModel):
+    name: str
+    icon: str
+    amount: int
 
 
 class CategoryUpdate(CategoryBase):
@@ -42,12 +46,12 @@ class User(UserBase):
         orm_mode = True
 
 
-class OperationCreate(BaseModel):
+class TransactionCreate(BaseModel):
     group: OperationGroup
     category_from: str
     category_to: str
     amount: int
-    date: datetime.date
+    date: datetime.date = datetime.date.today()
 
 
 class OperationBase(BaseModel):

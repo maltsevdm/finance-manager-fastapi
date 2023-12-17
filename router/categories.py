@@ -39,7 +39,7 @@ async def remove_category(
     return 'Category was successfully deleted.'
 
 
-@router.get('/all')
+@router.get('/all', response_model=list[schemas.CategoryRead])
 async def read_categories_by_group(
         group: CategoryGroup,
         user: User = Depends(current_active_user),

@@ -5,6 +5,8 @@ from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, TIMESTAMP
 from sqlalchemy.orm import relationship, DeclarativeBase, Mapped, mapped_column
 
+import utils
+
 
 class Base(DeclarativeBase):
     pass
@@ -39,8 +41,10 @@ class Category(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
     name: Mapped[str] = mapped_column(nullable=False)
     group: Mapped[CategoryGroup] = mapped_column(nullable=False)
+    date: Mapped[datetime.date] = mapped_column(nullable=False, default=utils.get_start_month_date())
     amount: Mapped[int] = mapped_column(nullable=False, default=0)
-    icon: Mapped[str]
+    icon: Mapped[str] = mapped_column(nullable=False)
+    position: Mapped[int] = mapped_column(nullable=False)
 
     # owner = relationship("User", back_populates="items")
 
@@ -50,10 +54,11 @@ class Balance(Base):
 
     user_id = Column(Integer, ForeignKey('user.id'), primary_key=True, nullable=False)
     balance = Column(Integer, nullable=False, default=0)
+    date: Mapped[datetime.date] = mapped_column(nullable=False, default=utils.get_start_month_date())
 
 
-class Operation(Base):
-    __tablename__ = 'operation'
+class Transaction(Base):
+    __tablename__ = 'transaction'
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
