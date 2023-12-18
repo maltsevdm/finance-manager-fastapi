@@ -128,7 +128,11 @@ async def get_general_data(
     incomes = await core.get_transactions_by_group(db, user.id, OperationGroup.income)
     expenses = await core.get_transactions_by_group(db, user.id, OperationGroup.expense)
 
-    return {'balance': balance, 'incomes': incomes, 'expenses': expenses}
+    return {
+        'balance': balance,
+        'incomes': incomes,
+        'expenses': expenses
+    }
 
 
 app.include_router(

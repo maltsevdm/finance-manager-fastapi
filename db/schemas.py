@@ -16,18 +16,23 @@ class CategoryCreate(CategoryBase):
     position: int
 
 
-class CategoryRemove(CategoryBase):
-    pass
-
-
 class CategoryRead(BaseModel):
+    id: int
+    user_id: int
     name: str
+    group: CategoryGroup
+    date: datetime.date
+    amount: int
     icon: str
-    amount: int
+    position: int
 
 
-class CategoryUpdate(CategoryBase):
+class CategoryUpdate(BaseModel):
+    id: int
+    name: str
     amount: int
+    position: int
+    icon: str
 
 
 class UserBase(BaseModel):
@@ -48,8 +53,8 @@ class User(UserBase):
 
 class TransactionCreate(BaseModel):
     group: OperationGroup
-    category_from: str
-    category_to: str
+    id_category_from: int
+    id_category_to: int
     amount: int
     date: datetime.date = datetime.date.today()
 

@@ -32,41 +32,48 @@ async def add_category(db: AsyncSession, user_id: int, category: schemas.Categor
     db_category = models.Category(user_id=user_id, **category.__dict__)
     db.add(db_category)
     await db.commit()
+    await db.refresh(db_category)
     return db_category
 
 
-async def remove_category(db: AsyncSession, user_id: int, category: schemas.CategoryRemove):
-    stmt = (delete(models.Category)
-            .filter_by(user_id=user_id, name=category.name, group=category.group))
+async def remove_category(db: AsyncSession, category_id: int):
+    stmt = delete(models.Category).filter_by(id=category_id)
     await db.execute(stmt)
     await db.commit()
+    return 'done'
 
 
-async def get_category_amount(db: AsyncSession, user_id: int, category: schemas.CategoryRead):
-    query = (select(models.Category.amount)
-             .filter_by(user_id=user_id, name=category.name, group=category.group))
-    return (await db.execute(query)).scalars().first()
+async def get_category_amount(db: AsyncSession, category_id: int):
+    return (await db.get(models.Category, category_id)).amount
 
 
 async def get_categories_by_group(
         db: AsyncSession, user_id: int, group: CategoryGroup, date=utils.get_start_month_date()
 ):
-    query = (select(models.Category.name, models.Category.icon, models.Category.amount)
+    query = (select(models.Category)
              .filter_by(user_id=user_id, group=group, date=date).order_by(models.Category.position))
-    result = (await db.execute(query)).all()
+    result = (await db.execute(query)).scalars().all()
     return result
 
 
-async def update_category_amount(db: AsyncSession, user_id: int, category: schemas.CategoryUpdate):
-    stmt = (update(models.Category)
-            .values(amount=category.amount)
-            .filter_by(user_id=user_id, name=category.name, group=category.group))
+async def update_category_amount(db: AsyncSession, category_id: int, amount: int):
+    stmt = update(models.Category).values(amount=amount).filter_by(id=category_id)
     await db.execute(stmt)
+
+
+async def update_category(db: AsyncSession, category: schemas.CategoryUpdate):
+    stmt = (update(models.Category).values(name=category.name, amount=category.amount,
+                                           icon=category.icon, position=category.position)
+            .filter_by(id=category.id))
+    await db.execute(stmt)
+    await db.commit()
+    return 'done'
 
 
 async def get_transactions_by_group(
         db: AsyncSession, user_id: int, group: models.OperationGroup,
-        date_from: datetime.date = utils.get_start_month_date(), date_to: datetime.date = None):
+        date_from: datetime.date = utils.get_start_month_date(), date_to: datetime.date = None
+):
     query = select(func.sum(models.Transaction.amount)).filter_by(user_id=user_id, group=group)
     query = query.filter(models.Transaction.date >= date_from)
     if date_to:
@@ -78,26 +85,15 @@ async def get_transactions_by_group(
 
 
 async def add_operation(db: AsyncSession, user_id: int, operation: schemas.TransactionCreate):
-    query = (select(models.Category.amount)
-             .filter_by(user_id=user_id, name=operation.category_from, group=CategoryGroup.bank))
-    amount_cat_from = (await db.execute(query)).scalars().first()
-    if amount_cat_from is None:
+    db_category_from = (await db.get(models.Category, operation.id_category_from))
+    if db_category_from.amount is None:
         return 'error'
-    amount_cat_from -= operation.amount
-    await update_category_amount(db, user_id,
-                                 schemas.CategoryUpdate(name=operation.category_from, group=CategoryGroup.bank,
-                                                        amount=amount_cat_from))
+    db_category_from.amount -= operation.amount
 
-    query = (select(models.Category.amount)
-             .filter_by(user_id=user_id, name=operation.category_to, group=CategoryGroup.expense))
-    amount_cat_to = (await db.execute(query)).scalars().first()
-    if amount_cat_to is None:
+    db_category_to = (await db.get(models.Category, operation.id_category_to))
+    if db_category_to.amount is None:
         return 'error'
-
-    amount_cat_to += operation.amount
-    await update_category_amount(db, user_id,
-                                 schemas.CategoryUpdate(name=operation.category_to, group=CategoryGroup.expense,
-                                                        amount=amount_cat_to))
+    db_category_to.amount += operation.amount
 
     db_operation = models.Transaction(user_id=user_id, **operation.__dict__)
     db.add(db_operation)
@@ -112,8 +108,8 @@ async def add_operation(db: AsyncSession, user_id: int, operation: schemas.Trans
 
     return {
         'new_balance': new_balance,
-        'amount_category_from': amount_cat_from,
-        'amount_category_to': amount_cat_to,
+        'amount_category_from': db_category_from.amount,
+        'amount_category_to': db_category_to.amount,
         'expenses': expenses,
         'incomes': incomes
     }
@@ -137,7 +133,8 @@ async def get_last_date(db: AsyncSession, user_id: int):
 
 
 async def set_balance(db: AsyncSession, user_id: int, new_balance):
-    stmt = update(models.Balance).values(balance=new_balance).filter_by(user_id=user_id)
+    stmt = (update(models.Balance).values(balance=new_balance)
+            .filter_by(user_id=user_id, date=utils.get_start_month_date()))
     await db.execute(stmt)
     await db.commit()
 
@@ -170,28 +167,9 @@ async def prepare_db_for_user(db: AsyncSession, user_id: int):
             )
 
 
-async def change_category_name(db: AsyncSession, user_id: int, group: CategoryGroup, old_name: str, new_name: str):
-    stmt = update(models.Category).values(name=new_name).filter_by(user_id=user_id, group=group, name=old_name)
-    await db.execute(stmt)
-    await db.commit()
-
-
-async def change_category_icon(db: AsyncSession, user_id: int, group: CategoryGroup, name: str, icon: str):
-    stmt = update(models.Category).values(icon=icon).filter_by(user_id=user_id, group=group, name=name)
-    await db.execute(stmt)
-    await db.commit()
-
-
-async def change_bank_amount(db: AsyncSession, user_id: int, name: str, amount: int):
-    stmt = update(models.Category).values(amount=amount).filter_by(
-        user_id=user_id, group=CategoryGroup.bank, name=name, date=utils.get_start_month_date())
-    await db.execute(stmt)
-    await db.commit()
-
-
 async def test():
     async with async_session() as db:
-        print('======> ', await prepare_db_for_user(db, 1))
+        print(await get_category_amount(db, 1))
 
 
 if __name__ == '__main__':

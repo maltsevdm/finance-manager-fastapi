@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 SQLALCHEMY_DATABASE_URL = "postgresql+psycopg://maltsev:12345@localhost:5432/coinkeeper"
 
-engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=False)
+engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
 async_session = async_sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
