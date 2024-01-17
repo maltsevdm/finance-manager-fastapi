@@ -10,13 +10,14 @@ from db.models import User, CategoryGroup
 router = APIRouter()
 
 
-@router.post('/add', response_model=schemas.CategoryRead)
+# @router.post('/', response_model=schemas.CategoryRead)
+@router.post('/')
 async def add_category(
         category: schemas.CategoryCreate,
         user: User = Depends(current_active_user),
-        db: AsyncSession = Depends(get_async_session)
 ):
-    return await core.add_category(db, user.id, category)
+    res = await core.add_category(user.id, category)
+    return res
 
 
 @router.patch('/update')

@@ -12,7 +12,6 @@ class CategoryBase(BaseModel):
 
 class CategoryCreate(CategoryBase):
     icon: str
-    amount: int = 0
     position: int
 
 
@@ -21,8 +20,6 @@ class CategoryRead(BaseModel):
     user_id: int
     name: str
     group: CategoryGroup
-    date: datetime.date
-    amount: int
     icon: str
     position: int
 

@@ -28,12 +28,29 @@ async def create_tables():
         await conn.run_sync(Base.metadata.create_all)
 
 
-async def add_category(db: AsyncSession, user_id: int, category: schemas.CategoryCreate):
-    db_category = models.Category(user_id=user_id, **category.__dict__)
-    db.add(db_category)
-    await db.commit()
-    await db.refresh(db_category)
-    return db_category
+async def add_category(
+        # db: AsyncSession,
+        user_id: int,
+        category: schemas.CategoryCreate
+):
+    async with async_session() as db:
+        db_category = models.Category(
+            user_id=user_id, name=category.name, group=category.group,
+            icon=category.icon, position=category.position
+        )
+        db.add(db_category)
+        await db.flush()
+        # await db.refresh(db_category)
+        # await db.commit()
+
+        db_category_amount = models.CategoryAmount(
+            category_id=db_category.id, user_id=user_id,
+            group=category.group
+        )
+        db.add(db_category_amount)
+
+        await db.commit()
+        return db_category
 
 
 async def remove_category(db: AsyncSession, category_id: int):
@@ -122,13 +139,19 @@ async def add_user_to_balance(user_id: int):
         await db.commit()
 
 
-async def get_balance(db: AsyncSession, user_id: int, date: datetime.date = utils.get_start_month_date()):
-    query = select(func.sum(models.Category.amount)).filter_by(user_id=user_id, group='bank', date=date)
+async def get_balance(
+        db: AsyncSession, user_id: int,
+        date: datetime.date = utils.get_start_month_date()
+):
+    query = (select(func.sum(models.CategoryAmount.amount))
+             .filter_by(user_id=user_id, group=CategoryGroup.bank.value, date=date))
     return (await db.execute(query)).scalars().first()
 
 
 async def get_last_date(db: AsyncSession, user_id: int):
-    query = select(models.Category.date).filter_by(user_id=user_id).order_by(models.Category.date.desc())
+    query = (select(models.CategoryAmount.date)
+             .filter_by(user_id=user_id)
+             .order_by(models.CategoryAmount.date.desc()))
     return (await db.execute(query)).scalars().first()
 
 
@@ -146,7 +169,8 @@ async def get_user_db():
 
 async def get_user_categories(db: AsyncSession, user_id: int, date):
     query = (select(
-        models.Category.name, models.Category.group, models.Category.icon, models.Category.amount)
+        models.Category.name, models.Category.group, models.Category.icon,
+        models.Category.amount, models.Category.position)
              .filter_by(user_id=user_id, date=date))
     return (await db.execute(query)).all()
 
@@ -158,11 +182,13 @@ async def prepare_db_for_user(db: AsyncSession, user_id: int):
             await add_category(db, user_id, category)
     else:
         user_categories = await get_user_categories(db, user_id, last_date)
-        for name, group, icon, amount in user_categories:
+        for name, group, icon, amount, position in user_categories:
             await add_category(
                 db, user_id,
                 schemas.CategoryCreate(
-                    name=name, group=group, icon=icon, amount=amount if group == CategoryGroup.bank else 0
+                    name=name, group=group, icon=icon, amount=amount if group == CategoryGroup.bank else 0,
+                    position=position
+
                 )
             )
 

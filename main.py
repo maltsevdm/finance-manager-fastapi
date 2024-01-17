@@ -50,7 +50,7 @@ router.include_router(
 
 origins = [
     'http://localhost:3000',
-    'http://192.168.1.160:3000',
+    'http://192.168.1.161:3000',
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -141,4 +141,4 @@ app.include_router(
 )
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="192.168.1.160", port=8000, use_colors=True)
+    uvicorn.run(app, host="192.168.1.161", port=8000, use_colors=True)
