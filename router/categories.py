@@ -20,28 +20,36 @@ async def add_category(
     return res
 
 
-@router.patch('/update')
-async def update_category_amount(
-        category: schemas.CategoryUpdate,
+@router.put('/')
+async def put_category(
+        category: schemas.CategoryPut,
         user: User = Depends(current_active_user),
-        db: AsyncSession = Depends(get_async_session)
 ):
-    return await core.update_category(db, category)
+    return await core.update_category(user.id, category)
 
 
-@router.delete('/delete')
+# @router.patch('/')
+# async def patch_category(
+#         category: schemas.CategoryPatch,
+#         user: User = Depends(current_active_user),
+# ):
+#     return await core.patch_category(user.id, category)
+
+
+@router.delete('/')
 async def remove_category(
-        category_id: int,
-        user: User = Depends(current_active_user),
-        db: AsyncSession = Depends(get_async_session)
+        category_id: int, user: User = Depends(current_active_user),
 ):
-    return await core.remove_category(db, category_id)
+    return await core.remove_category(user.id, category_id)
 
 
-@router.get('/all', response_model=list[schemas.CategoryRead])
-async def read_categories_by_group(
-        group: CategoryGroup,
-        user: User = Depends(current_active_user),
-        db: AsyncSession = Depends(get_async_session)
+@router.get('/', response_model=list[schemas.CategoryRead])
+async def get_categories(user: User = Depends(current_active_user)):
+    return await core.get_categories(user.id)
+
+
+@router.get('/{group}', response_model=list[schemas.CategoryRead])
+async def get_categories(
+        group: CategoryGroup, user: User = Depends(current_active_user)
 ):
-    return await core.get_categories_by_group(db, user.id, group)
+    return await core.get_categories(user.id, group)

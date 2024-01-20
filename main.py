@@ -141,4 +141,4 @@ app.include_router(
 )
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="192.168.1.161", port=8000, use_colors=True)
+    uvicorn.run(app, use_colors=True)

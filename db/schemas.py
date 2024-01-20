@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -12,7 +13,6 @@ class CategoryBase(BaseModel):
 
 class CategoryCreate(CategoryBase):
     icon: str
-    position: int
 
 
 class CategoryRead(BaseModel):
@@ -22,14 +22,22 @@ class CategoryRead(BaseModel):
     group: CategoryGroup
     icon: str
     position: int
+    amount: int
 
 
-class CategoryUpdate(BaseModel):
+class CategoryPut(BaseModel):
     id: int
     name: str
     amount: int
     position: int
     icon: str
+
+
+class CategoryPatch(BaseModel):
+    id: int
+    name: Optional[str] = None
+    position: Optional[int] = None
+    icon: Optional[str] = None
 
 
 class UserBase(BaseModel):
