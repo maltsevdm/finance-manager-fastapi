@@ -63,6 +63,7 @@ class TransactionCreate(BaseModel):
     id_category_to: int
     amount: int
     date: datetime.date = datetime.date.today()
+    note: str = ''
 
 
 class OperationBase(BaseModel):

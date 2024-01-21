@@ -192,39 +192,46 @@ async def get_transactions_by_group(
     return result
 
 
-async def add_transaction(db: AsyncSession, user_id: int,
-                          transaction: schemas.TransactionCreate):
-    db_category_from = (
-        await db.get(models.Category, transaction.id_category_from))
-    if db_category_from.amount is None:
-        return 'error'
-    db_category_from.amount -= transaction.amount
+async def add_transaction(user_id: int, transaction: schemas.TransactionCreate):
+    async with async_session() as db:
+        query = (select(models.CategoryAmount)
+                 .filter_by(category_id=transaction.id_category_from,
+                            date=utils.get_start_month_date()))
+        db_category_from = (await db.execute(query)).scalar_one()
+        db_category_from.amount -= transaction.amount
 
-    db_category_to = (await db.get(models.Category, transaction.id_category_to))
-    if db_category_to.amount is None:
-        return 'error'
-    db_category_to.amount += transaction.amount
+        query = (select(models.CategoryAmount)
+                 .filter_by(category_id=transaction.id_category_to,
+                            date=utils.get_start_month_date()))
+        db_category_to = (await db.execute(query)).scalar_one()
+        db_category_to.amount += transaction.amount
 
-    db_operation = models.Transaction(user_id=user_id, **transaction.__dict__)
-    db.add(db_operation)
+        db_operation = models.Transaction(
+            user_id=user_id, group=transaction.group,
+            category_from=transaction.id_category_from,
+            category_to=transaction.id_category_to,
+            amount=transaction.amount, date=transaction.date,
+            note=transaction.note
+        )
+        db.add(db_operation)
 
-    new_balance = await get_balance(db, user_id)
-    await set_balance(db, user_id, new_balance)
+        new_balance = await get_balance(db, user_id)
+        await set_balance(db, user_id, new_balance)
 
-    await db.commit()
+        await db.commit()
 
-    expenses = await get_transactions_by_group(db, user_id,
-                                               models.OperationGroup.expense)
-    incomes = await get_transactions_by_group(db, user_id,
-                                              models.OperationGroup.income)
+        expenses = await get_transactions_by_group(
+            db, user_id, models.OperationGroup.expense)
+        incomes = await get_transactions_by_group(
+            db, user_id, models.OperationGroup.income)
 
-    return {
-        'new_balance': new_balance,
-        'amount_category_from': db_category_from.amount,
-        'amount_category_to': db_category_to.amount,
-        'expenses': expenses,
-        'incomes': incomes
-    }
+        return {
+            'new_balance': new_balance,
+            'amount_category_from': db_category_from.amount,
+            'amount_category_to': db_category_to.amount,
+            'expenses': expenses,
+            'incomes': incomes
+        }
 
 
 async def add_user_to_balance(user_id: int):

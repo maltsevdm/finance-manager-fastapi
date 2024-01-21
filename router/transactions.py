@@ -10,13 +10,13 @@ from db.models import User
 router = APIRouter()
 
 
-@router.post('/add')
+@router.post('/')
 async def add_transaction(
-        operation: schemas.TransactionCreate,
+        transaction: schemas.TransactionCreate,
         user: User = Depends(current_active_user),
-        db: AsyncSession = Depends(get_async_session)
 ):
-    return await core.add_transaction(db, user.id, operation)
+    return await core.add_transaction(user.id, transaction)
+
 
 @router.get('/per_month/')
 async def get_amount_group_for_month(

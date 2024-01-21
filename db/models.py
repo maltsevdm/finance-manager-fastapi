@@ -59,17 +59,18 @@ class CategoryAmount(Base):
         nullable=False)
     group: Mapped[CategoryGroup] = mapped_column(nullable=False)
     date: Mapped[datetime.date] = mapped_column(
-        nullable=False,
-        default=utils.get_start_month_date())
+        nullable=False, default=utils.get_start_month_date())
     amount: Mapped[int] = mapped_column(nullable=False, default=0)
 
 
 class Balance(Base):
     __tablename__ = 'balance'
 
-    user_id = Column(Integer, ForeignKey('user.id'), primary_key=True, nullable=False)
+    user_id = Column(
+        Integer, ForeignKey('user.id'), primary_key=True, nullable=False)
     balance = Column(Integer, nullable=False, default=0)
-    date: Mapped[datetime.date] = mapped_column(nullable=False, default=utils.get_start_month_date())
+    date: Mapped[datetime.date] = mapped_column(
+        nullable=False, default=utils.get_start_month_date())
 
 
 class Transaction(Base):
@@ -78,7 +79,12 @@ class Transaction(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
     group: Mapped[OperationGroup] = mapped_column(nullable=False)
-    category_from: Mapped[str] = mapped_column(nullable=False)
-    category_to: Mapped[str] = mapped_column(nullable=False)
+    category_from: Mapped[int] = mapped_column(
+        ForeignKey('category.id', ondelete='CASCADE'),
+        nullable=False)
+    category_to: Mapped[int] = mapped_column(
+        ForeignKey('category.id', ondelete='CASCADE'),
+        nullable=False)
     amount: Mapped[int] = mapped_column(nullable=False)
     date: Mapped[datetime.date] = mapped_column(nullable=False)
+    note: Mapped[str]
