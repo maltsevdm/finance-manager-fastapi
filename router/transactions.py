@@ -16,7 +16,7 @@ async def add_transaction(
         user: User = Depends(current_active_user),
         db: AsyncSession = Depends(get_async_session)
 ):
-    return await core.add_operation(db, user.id, operation)
+    return await core.add_transaction(db, user.id, operation)
 
 @router.get('/per_month/')
 async def get_amount_group_for_month(

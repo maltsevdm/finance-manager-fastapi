@@ -13,18 +13,17 @@ from db import schemas
 
 categories_start_pack = [
     schemas.CategoryCreate(name='Продукты', group=CategoryGroup.expense,
-                           icon='products.png', position=1),
+                           icon='products.png'),
     schemas.CategoryCreate(name='Еда вне дома', group=CategoryGroup.expense,
-                           icon='icons8-food-bar-100.png',
-                           position=2),
+                           icon='icons8-food-bar-100.png'),
     schemas.CategoryCreate(name='Транспорт', group=CategoryGroup.expense,
-                           icon='transport.png', position=3),
+                           icon='transport.png'),
     schemas.CategoryCreate(name='Услуги', group=CategoryGroup.expense,
-                           icon='icons8-scissors-100.png', position=4),
+                           icon='icons8-scissors-100.png'),
     schemas.CategoryCreate(name='Прочее', group=CategoryGroup.expense,
-                           icon='icons8-other-100.png', position=5),
+                           icon='icons8-other-100.png'),
     schemas.CategoryCreate(name='Tinkoff Black', group=CategoryGroup.bank,
-                           icon='money.png', position=1),
+                           icon='money.png'),
 ]
 
 
@@ -72,10 +71,6 @@ async def remove_category(user_id: int, category_id: int):
         return db_category
 
 
-async def get_category_amount(db: AsyncSession, category_id: int):
-    return (await db.get(models.Category, category_id)).amount
-
-
 async def get_categories(user_id: int, group: CategoryGroup = None):
     async with async_session() as db:
         query = (select(models.Category).filter_by(user_id=user_id)
@@ -99,13 +94,6 @@ async def get_categories(user_id: int, group: CategoryGroup = None):
             category.amount = category_amounts_dict[category.id]
 
         return categories
-
-
-async def update_category_amount(db: AsyncSession, category_id: int,
-                                 amount: int):
-    stmt = update(models.Category).values(amount=amount).filter_by(
-        id=category_id)
-    await db.execute(stmt)
 
 
 async def update_category_positions(
@@ -156,20 +144,34 @@ async def update_category(user_id: int, category: schemas.CategoryPut):
         return db_category
 
 
-async def patch_category(category: schemas.CategoryPatch):
-    async with async_session() as db:
-        update_fields = {}
-        if category.name is not None:
-            update_fields['name'] = category.name
-        if category.position is not None:
-            update_fields['position'] = category.position
-        if category.icon is not None:
-            update_fields['icon'] = category.icon
+async def get_category_amount(
+        db: AsyncSession, category_id: int,
+        date: datetime.date = utils.get_start_month_date()
+) -> models.CategoryAmount:
+    query = (select(models.CategoryAmount)
+             .filter_by(category_id=category_id, date=date))
+    return (await db.execute(query)).scalars().one()
 
-        stmt = (update(models.Category)
-                .values(**update_fields)
-                .filter_by(id=category.id).returning(models.Category))
-        db_category = (await db.execute(stmt)).scalars().one()
+
+async def patch_category(user_id: int, category: schemas.CategoryPatch):
+    async with async_session() as db:
+        db_category = await db.get(models.Category, category.id)
+
+        if category.name:
+            db_category.name = category.name
+        if category.position:
+            await update_category_positions(
+                db, user_id, db_category.group, category.position,
+                db_category.position)
+            db_category.position = category.position
+        if category.icon:
+            db_category.icon = category.icon
+
+        db_category_amount = await get_category_amount(db, category.id)
+        if category is not None:
+            db_category_amount.amount = category.amount
+
+        db_category.amount = db_category_amount.amount
         await db.commit()
         return db_category
 
@@ -190,20 +192,20 @@ async def get_transactions_by_group(
     return result
 
 
-async def add_operation(db: AsyncSession, user_id: int,
-                        operation: schemas.TransactionCreate):
+async def add_transaction(db: AsyncSession, user_id: int,
+                          transaction: schemas.TransactionCreate):
     db_category_from = (
-        await db.get(models.Category, operation.id_category_from))
+        await db.get(models.Category, transaction.id_category_from))
     if db_category_from.amount is None:
         return 'error'
-    db_category_from.amount -= operation.amount
+    db_category_from.amount -= transaction.amount
 
-    db_category_to = (await db.get(models.Category, operation.id_category_to))
+    db_category_to = (await db.get(models.Category, transaction.id_category_to))
     if db_category_to.amount is None:
         return 'error'
-    db_category_to.amount += operation.amount
+    db_category_to.amount += transaction.amount
 
-    db_operation = models.Transaction(user_id=user_id, **operation.__dict__)
+    db_operation = models.Transaction(user_id=user_id, **transaction.__dict__)
     db.add(db_operation)
 
     new_balance = await get_balance(db, user_id)

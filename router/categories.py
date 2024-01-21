@@ -28,12 +28,12 @@ async def put_category(
     return await core.update_category(user.id, category)
 
 
-# @router.patch('/')
-# async def patch_category(
-#         category: schemas.CategoryPatch,
-#         user: User = Depends(current_active_user),
-# ):
-#     return await core.patch_category(user.id, category)
+@router.patch('/')
+async def patch_category(
+        category: schemas.CategoryPatch,
+        user: User = Depends(current_active_user),
+):
+    return await core.patch_category(user.id, category)
 
 
 @router.delete('/')

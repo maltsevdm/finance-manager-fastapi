@@ -35,9 +35,10 @@ class CategoryPut(BaseModel):
 
 class CategoryPatch(BaseModel):
     id: int
-    name: Optional[str] = None
-    position: Optional[int] = None
-    icon: Optional[str] = None
+    name: str = ''
+    position: int = 0
+    icon: str = ''
+    amount: Optional[int] = None
 
 
 class UserBase(BaseModel):
