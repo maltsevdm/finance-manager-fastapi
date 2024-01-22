@@ -5,3 +5,4 @@
 test.py
 config.py
 alembic.ini
+db/auth_data.py

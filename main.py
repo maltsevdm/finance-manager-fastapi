@@ -4,20 +4,16 @@ import sys
 from os import walk
 
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException, Request, APIRouter
+from fastapi import Depends, FastAPI, APIRouter
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
-from db.models import User, CategoryGroup, OperationGroup
-import db.schemas as schemas
-from db.database import get_db, get_async_session
+from db.models import User, OperationGroup
+from db.database import get_async_session
 from auth.manager import fastapi_users, auth_backend, current_active_user
 from auth.schemas import UserRead, UserCreate
 from db import core
-from db.database import async_session
 from router.categories import router as router_categories
 from router.transactions import router as router_operations
 
@@ -57,10 +53,8 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=['GET', 'POST', 'OPTIONS', 'DELETE', 'PATCH', 'PUT'],
-    # allow_methods=['*'],
-    allow_headers=["Content-Type", "Set-Cookie", "Access-Control-Allow-Headers", "Access-Control-Allow-Origin",
-                   "Authorization"],
-    # allow_headers=['*']
+    allow_headers=['Content-Type', 'Set-Cookie', 'Access-Control-Allow-Headers', 
+                   'Access-Control-Allow-Origin', 'Authorization'],
 )
 
 
@@ -140,5 +134,8 @@ app.include_router(
     prefix='/api'
 )
 
-if __name__ == "__main__":
+if __name__ == '__main__':
+    if sys.platform == 'win32':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
     uvicorn.run(app, use_colors=True)

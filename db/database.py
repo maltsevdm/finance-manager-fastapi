@@ -1,9 +1,10 @@
 from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
-from sqlalchemy.ext.declarative import declarative_base
 
-SQLALCHEMY_DATABASE_URL = "postgresql+psycopg://maltsev:12345@localhost:5432/coinkeeper"
+from db.auth_data import USER, PASS, HOST, PORT, DB
+
+SQLALCHEMY_DATABASE_URL = f'postgresql+psycopg://{USER}:{PASS}@{HOST}:{PORT}/{DB}'
 
 engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
 async_session = async_sessionmaker(autocommit=False, autoflush=False,
