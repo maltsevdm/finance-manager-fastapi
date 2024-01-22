@@ -5,7 +5,7 @@ from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from sqlalchemy import update, select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import utils
+from src.utils import utils
 from src.db import models, schemas
 from src.db.database import async_session, engine
 from src.db.models import Base, CategoryGroup, User
