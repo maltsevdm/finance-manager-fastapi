@@ -1,7 +1,6 @@
 from fastapi import APIRouter
 
-from db import schemas
-from db import core
+from src.db import core, schemas
 
 router = APIRouter()
 

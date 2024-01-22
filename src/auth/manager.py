@@ -1,23 +1,20 @@
 from typing import Optional
 
-from fastapi import Depends, Request, Response
+from fastapi import Depends, Request
 from fastapi_users import BaseUserManager, IntegerIDMixin, FastAPIUsers, exceptions
 from fastapi_users.authentication import CookieTransport, JWTStrategy, AuthenticationBackend
 
-from db import core
-from db.models import User
-from db.core import get_user_db
-from auth import schemas
+from src.db import core
+from src.db.models import User
+from src.db.core import get_user_db
+from src.auth import schemas
 
-SECRET = "SECRET"
+SECRET = 'SECRET'
 
 
 class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     reset_password_token_secret = SECRET
     verification_token_secret = SECRET
-
-    async def on_after_register(self, user: User, request: Optional[Request] = None):
-        print(f"User {user.id} has registered.")
 
     async def create(
             self, user_create: schemas.UserCreate, safe: bool = False, request: Optional[Request] = None,
@@ -33,20 +30,13 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
             if safe
             else user_create.create_update_dict_superuser()
         )
-        password = user_dict.pop("password")
-        user_dict["hashed_password"] = self.password_helper.hash(password)
+        password = user_dict.pop('password')
+        user_dict['hashed_password'] = self.password_helper.hash(password)
 
         created_user = await self.user_db.create(user_dict)
         await core.add_user_to_balance(created_user.id)
 
-        await self.on_after_register(created_user, request)
-
         return created_user
-
-    # async def on_after_forgot_password(
-    #     self, user: User, token: str, request: Optional[Request] = None
-    # ):
-    #     print(f"User {user.id} has forgot their password. Reset token: {token}")
 
 
 async def get_user_manager(user_db=Depends(get_user_db)):
@@ -63,7 +53,7 @@ def get_jwt_strategy() -> JWTStrategy:
 
 
 auth_backend = AuthenticationBackend(
-    name="jwt",
+    name='jwt',
     transport=cookie_transport,
     get_strategy=get_jwt_strategy,
 )

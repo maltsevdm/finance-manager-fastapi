@@ -6,10 +6,9 @@ from sqlalchemy import update, select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import utils
-from db import models
-from db.database import async_session, engine, get_async_session
-from db.models import Base, CategoryGroup, User
-from db import schemas
+from src.db import models, schemas
+from src.db.database import async_session, engine
+from src.db.models import Base, CategoryGroup, User
 
 categories_start_pack = [
     schemas.CategoryCreate(name='Продукты', group=CategoryGroup.expense,
@@ -273,28 +272,29 @@ async def get_user_db():
 async def get_user_categories(db: AsyncSession, user_id: int, date):
     query = (select(
         models.Category.name, models.Category.group, models.Category.icon,
-        models.Category.amount, models.Category.position)
+        models.Category.position)
              .filter_by(user_id=user_id, date=date))
     return (await db.execute(query)).all()
 
 
-async def prepare_db_for_user(db: AsyncSession, user_id: int):
-    last_date = await get_last_date(db, user_id)
-    if last_date is None:
-        for category in categories_start_pack:
-            await add_category(db, user_id, category)
-    else:
-        user_categories = await get_user_categories(db, user_id, last_date)
-        for name, group, icon, amount, position in user_categories:
-            await add_category(
-                db, user_id,
-                schemas.CategoryCreate(
-                    name=name, group=group, icon=icon,
-                    amount=amount if group == CategoryGroup.bank else 0,
-                    position=position
+async def prepare_db_for_user(user_id: int):
+    async with async_session() as db:
+        last_date = await get_last_date(db, user_id)
+        if last_date is None:
+            for category in categories_start_pack:
+                await add_category(db, user_id, category)
+        else:
+            user_categories = await get_user_categories(db, user_id, last_date)
+            for name, group, icon, amount, position in user_categories:
+                await add_category(
+                    db, user_id,
+                    schemas.CategoryCreate(
+                        name=name, group=group, icon=icon,
+                        amount=amount if group == CategoryGroup.bank else 0,
+                        position=position
 
+                    )
                 )
-            )
 
 
 async def test():

@@ -1,11 +1,8 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from auth.manager import current_active_user
-from db import core
-from db.database import get_async_session
-from db import schemas
-from db.models import User, CategoryGroup
+from src.auth.manager import current_active_user
+from src.db import core, schemas
+from src.db.models import User, CategoryGroup
 
 router = APIRouter()
 

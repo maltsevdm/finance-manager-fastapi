@@ -9,13 +9,13 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
 
-from db.models import User, OperationGroup
-from db.database import get_async_session
-from auth.manager import fastapi_users, auth_backend, current_active_user
-from auth.schemas import UserRead, UserCreate
-from db import core
-from router.categories import router as router_categories
-from router.transactions import router as router_operations
+from src.db.models import User, OperationGroup
+from src.db.database import get_async_session
+from src.auth.manager import fastapi_users, auth_backend, current_active_user
+from src.auth.schemas import UserRead, UserCreate
+from src.db import core
+from src.router.categories import router as router_categories
+from src.router.transactions import router as router_operations
 
 app = FastAPI()
 router = APIRouter()

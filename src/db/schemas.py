@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from db.models import CategoryGroup, OperationGroup
+from src.db.models import CategoryGroup, OperationGroup
 
 
 class CategoryBase(BaseModel):

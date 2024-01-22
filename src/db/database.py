@@ -2,7 +2,7 @@ from typing import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
 
-from db.auth_data import USER, PASS, HOST, PORT, DB
+from src.db.auth_data import USER, PASS, HOST, PORT, DB
 
 SQLALCHEMY_DATABASE_URL = f'postgresql+psycopg://{USER}:{PASS}@{HOST}:{PORT}/{DB}'
 
