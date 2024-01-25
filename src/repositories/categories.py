@@ -81,10 +81,3 @@ class CategoriesRepository(SQLAlchemyRepository):
 
         return db_category
 
-        stmt = (update(models.CategoryAmount)
-                .values(amount=category.amount)
-                .filter_by(id=category.id, date=utils.get_start_month_date()))
-        await db.execute(stmt)
-
-        await db.commit()
-        return db_category

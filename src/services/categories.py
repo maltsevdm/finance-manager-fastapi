@@ -1,6 +1,3 @@
-from sqlalchemy import select
-
-from src.db.models import Category, CategoryAmount
 from src.schemas.categories import CategorySchemaAdd, CategoryPut
 from src.utils import utils
 from src.utils.enum_classes import CategoryGroup
@@ -8,7 +5,7 @@ from src.utils.unit_of_work import IUnitOfWork
 
 
 class CategoriesService:
-    async def add_category(
+    async def add_one(
             self, uow: IUnitOfWork, user_id: int, category: CategorySchemaAdd
     ):
         category_dict = category.model_dump()
@@ -27,7 +24,7 @@ class CategoriesService:
             await uow.commit()
             return db_category
 
-    async def remove_category(
+    async def remove_one(
             self, uow: IUnitOfWork, user_id: int, category_id: int
     ):
         async with uow:
@@ -39,7 +36,7 @@ class CategoriesService:
             await uow.commit()
             return db_category
 
-    async def update_category(
+    async def update_one(
             self, uow: IUnitOfWork, user_id: int, category: CategoryPut
     ):
         async with uow:
@@ -51,12 +48,8 @@ class CategoriesService:
             await uow.commit()
             return db_category
 
-
     async def get_categories(
             self, uow: IUnitOfWork, user_id: int, group: CategoryGroup = None
     ):
         async with uow:
             return await uow.categories.find_all(user_id=user_id, group=group)
-
-
-

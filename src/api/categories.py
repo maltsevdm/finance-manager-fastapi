@@ -18,7 +18,7 @@ async def add_category(
         category: src.schemas.categories.CategorySchemaAdd,
         user: User = Depends(current_active_user),
 ):
-    category = await CategoriesService().add_category(uow, user.id, category)
+    category = await CategoriesService().add_one(uow, user.id, category)
     return category
 
 
@@ -28,7 +28,7 @@ async def put_category(
         category: src.schemas.categories.CategoryPut,
         user: User = Depends(current_active_user),
 ):
-    res = await CategoriesService().update_category(uow, user.id, category)
+    res = await CategoriesService().update_one(uow, user.id, category)
     return res
 
 
@@ -46,7 +46,7 @@ async def remove_category(
         category_id: int,
         user: User = Depends(current_active_user),
 ):
-    res = await CategoriesService().remove_category(uow, user.id, category_id)
+    res = await CategoriesService().remove_one(uow, user.id, category_id)
     return res
 
 

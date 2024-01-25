@@ -32,16 +32,16 @@ class SQLAlchemyRepository(AbstractRepository):
         res = await self.session.execute(stmt)
         return res.scalar_one()
 
-    async def find_one(self, order_by=None, **filters):
+    async def find_one(self, **filters):
         query = select(self.model).filter_by(**filters)
-        if order_by:
-            query = query.order_by(order_by)
         res = await self.session.execute(query)
         res = res.scalar_one().to_read_model()
         return res.scalar_one()
 
-    async def find_all(self, **filters) -> list:
+    async def find_all(self, order_by=None, **filters) -> list:
         query = select(self.model).filter_by(**filters)
+        if order_by:
+            query = query.order_by(order_by)
         res = await self.session.execute(query)
         res = [row[0].to_read_model() for row in res.all()]
         return res
