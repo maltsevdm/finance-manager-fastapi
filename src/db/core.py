@@ -5,24 +5,28 @@ from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from sqlalchemy import update, select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import src.schemas.categories
+import src.schemas.transactions
+import src.utils.enum_classes
 from src.utils import utils
-from src.db import models, schemas
+from src.db import models
 from src.db.database import async_session, engine
-from src.db.models import Base, CategoryGroup, User
+from src.db.models import Base, User
+from src.utils.enum_classes import CategoryGroup
 
 categories_start_pack = [
-    schemas.CategoryCreate(name='Продукты', group=CategoryGroup.expense,
-                           icon='products.png'),
-    schemas.CategoryCreate(name='Еда вне дома', group=CategoryGroup.expense,
-                           icon='icons8-food-bar-100.png'),
-    schemas.CategoryCreate(name='Транспорт', group=CategoryGroup.expense,
-                           icon='transport.png'),
-    schemas.CategoryCreate(name='Услуги', group=CategoryGroup.expense,
-                           icon='icons8-scissors-100.png'),
-    schemas.CategoryCreate(name='Прочее', group=CategoryGroup.expense,
-                           icon='icons8-other-100.png'),
-    schemas.CategoryCreate(name='Tinkoff Black', group=CategoryGroup.bank,
-                           icon='money.png'),
+    src.schemas.categories.CategorySchemaAdd(name='Продукты', group=CategoryGroup.expense,
+                                             icon='products.png'),
+    src.schemas.categories.CategorySchemaAdd(name='Еда вне дома', group=CategoryGroup.expense,
+                                             icon='icons8-food-bar-100.png'),
+    src.schemas.categories.CategorySchemaAdd(name='Транспорт', group=CategoryGroup.expense,
+                                             icon='transport.png'),
+    src.schemas.categories.CategorySchemaAdd(name='Услуги', group=CategoryGroup.expense,
+                                             icon='icons8-scissors-100.png'),
+    src.schemas.categories.CategorySchemaAdd(name='Прочее', group=CategoryGroup.expense,
+                                             icon='icons8-other-100.png'),
+    src.schemas.categories.CategorySchemaAdd(name='Tinkoff Black', group=CategoryGroup.bank,
+                                             icon='money.png'),
 ]
 
 
@@ -33,7 +37,7 @@ async def create_tables():
 
 
 async def add_category(
-        user_id: int, category: schemas.CategoryCreate
+        user_id: int, category: src.schemas.categories.CategorySchemaAdd
 ):
     async with async_session() as db:
         query = (select(func.max(models.Category.position))
@@ -61,7 +65,8 @@ async def add_category(
 async def remove_category(user_id: int, category_id: int):
     async with async_session() as db:
         stmt = (delete(models.Category)
-                .filter_by(id=category_id).returning(models.Category))
+                .filter_by(id=category_id)
+                .returning(models.Category))
         db_category = (await db.execute(stmt)).scalars().one()
         await update_category_positions(
             db, user_id, db_category.group, 1000,
@@ -120,7 +125,7 @@ async def update_category_positions(
     return categories
 
 
-async def update_category(user_id: int, category: schemas.CategoryPut):
+async def update_category(user_id: int, category: src.schemas.categories.CategoryPut):
     async with async_session() as db:
         db_category = await db.get(models.Category, category.id)
         if db_category.position != category.position:
@@ -152,7 +157,7 @@ async def get_category_amount(
     return (await db.execute(query)).scalars().one()
 
 
-async def patch_category(user_id: int, category: schemas.CategoryPatch):
+async def patch_category(user_id: int, category: src.schemas.categories.CategoryPatch):
     async with async_session() as db:
         db_category = await db.get(models.Category, category.id)
 
@@ -176,7 +181,7 @@ async def patch_category(user_id: int, category: schemas.CategoryPatch):
 
 
 async def get_transactions_by_group(
-        db: AsyncSession, user_id: int, group: models.OperationGroup,
+        db: AsyncSession, user_id: int, group: src.utils.enum_classes.OperationGroup,
         date_from: datetime.date = utils.get_start_month_date(),
         date_to: datetime.date = None
 ):
@@ -191,7 +196,7 @@ async def get_transactions_by_group(
     return result
 
 
-async def add_transaction(user_id: int, transaction: schemas.TransactionCreate):
+async def add_transaction(user_id: int, transaction: src.schemas.transactions.TransactionCreate):
     async with async_session() as db:
         query = (select(models.CategoryAmount)
                  .filter_by(category_id=transaction.id_category_from,
@@ -220,9 +225,9 @@ async def add_transaction(user_id: int, transaction: schemas.TransactionCreate):
         await db.commit()
 
         expenses = await get_transactions_by_group(
-            db, user_id, models.OperationGroup.expense)
+            db, user_id, src.utils.enum_classes.OperationGroup.expense)
         incomes = await get_transactions_by_group(
-            db, user_id, models.OperationGroup.income)
+            db, user_id, src.utils.enum_classes.OperationGroup.income)
 
         return {
             'new_balance': new_balance,
@@ -288,7 +293,7 @@ async def prepare_db_for_user(user_id: int):
             for name, group, icon, amount, position in user_categories:
                 await add_category(
                     db, user_id,
-                    schemas.CategoryCreate(
+                    src.schemas.categories.CategorySchemaAdd(
                         name=name, group=group, icon=icon,
                         amount=amount if group == CategoryGroup.bank else 0,
                         position=position

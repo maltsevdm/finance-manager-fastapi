@@ -9,28 +9,21 @@ from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.db.models import User, OperationGroup
+from src.api.routers import all_routers
+from src.db.models import User
+from src.utils.enum_classes import OperationGroup
 from src.db.database import get_async_session
 from src.auth.manager import fastapi_users, auth_backend, current_active_user
 from src.auth.schemas import UserRead, UserCreate
 from src.db import core
-from src.router.categories import router as router_categories
-from src.router.transactions import router as router_operations
+from src.api.categories import router as router_categories
+from src.api.transactions import router as router_operations
 
 app = FastAPI()
 router = APIRouter()
 
-router.include_router(
-    router_categories,
-    prefix='/categories',
-    tags=['Category']
-)
-
-router.include_router(
-    router_operations,
-    prefix='/transactions',
-    tags=['Transaction']
-)
+for api_router in all_routers:
+    router.include_router(api_router)
 
 router.include_router(
     fastapi_users.get_auth_router(auth_backend),

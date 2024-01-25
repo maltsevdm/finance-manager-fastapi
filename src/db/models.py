@@ -1,26 +1,16 @@
 import datetime
-import enum
 
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, TIMESTAMP
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+from src.schemas.categories import CategorySchema, CategoryAmountSchema
 from src.utils import utils
+from src.utils.enum_classes import CategoryGroup, OperationGroup
 
 
 class Base(DeclarativeBase):
     pass
-
-
-class CategoryGroup(enum.Enum):
-    income = "income"
-    expense = "expense"
-    bank = "bank"
-
-
-class OperationGroup(enum.Enum):
-    income = 'income'
-    expense = 'expense'
 
 
 class User(SQLAlchemyBaseUserTable[int], Base):
@@ -46,6 +36,16 @@ class Category(Base):
     icon: Mapped[str] = mapped_column(nullable=False)
     position: Mapped[int] = mapped_column(nullable=False)
 
+    def to_read_model(self) -> CategorySchema:
+        return CategorySchema(
+            id=self.id,
+            user_id=self.user_id,
+            name=self.name,
+            group=self.group,
+            icon=self.icon,
+            position=self.position
+        )
+
 
 class CategoryAmount(Base):
     __tablename__ = 'category_amount'
@@ -61,6 +61,16 @@ class CategoryAmount(Base):
     date: Mapped[datetime.date] = mapped_column(
         nullable=False, default=utils.get_start_month_date())
     amount: Mapped[int] = mapped_column(nullable=False, default=0)
+
+    def to_read_model(self) -> CategoryAmountSchema:
+        return CategoryAmountSchema(
+            id=self.id,
+            category_id=self.category_id,
+            user_id=self.user_id,
+            group=self.group,
+            date=self.date,
+            amount=self.amount
+        )
 
 
 class Balance(Base):
