@@ -7,6 +7,7 @@ class CategoryGroup(enum.Enum):
     bank = "bank"
 
 
-class OperationGroup(enum.Enum):
+class TransactionGroup(enum.Enum):
     income = 'income'
     expense = 'expense'
+    transfer = 'transfer'

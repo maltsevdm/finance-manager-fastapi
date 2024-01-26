@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.routers import all_routers
 from src.db.models import User
-from src.utils.enum_classes import OperationGroup
+from src.utils.enum_classes import TransactionGroup
 from src.db.database import get_async_session
 from src.auth.manager import fastapi_users, auth_backend, current_active_user
 from src.auth.schemas import UserRead, UserCreate
@@ -112,8 +112,8 @@ async def get_general_data(
         # Создать в категориях для каждой категории новую дату
         await core.prepare_db_for_user(db, user.id)
     balance = await core.get_balance(db, user.id)
-    incomes = await core.get_transactions_by_group(db, user.id, OperationGroup.income)
-    expenses = await core.get_transactions_by_group(db, user.id, OperationGroup.expense)
+    incomes = await core.get_transactions_by_group(db, user.id, TransactionGroup.income)
+    expenses = await core.get_transactions_by_group(db, user.id, TransactionGroup.expense)
 
     return {
         'balance': balance,

@@ -1,6 +1,8 @@
-import datetime
+from datetime import date, datetime
+from typing import Union
 
 
-def get_start_month_date() -> datetime.date:
-    current_date = datetime.date.today()
-    return datetime.date(year=current_date.year, month=current_date.month, day=1)
+def get_start_month_date(
+        input_date: Union[date, datetime] = date.today()
+) -> date:
+    return date(year=input_date.year, month=input_date.month, day=1)

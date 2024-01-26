@@ -1,7 +1,7 @@
 from src.schemas.categories import CategorySchemaAdd, CategoryPut
-from src.utils import utils
 from src.utils.enum_classes import CategoryGroup
 from src.utils.unit_of_work import IUnitOfWork
+from src.utils.utils import get_start_month_date
 
 
 class CategoriesService:
@@ -14,12 +14,6 @@ class CategoriesService:
                                                             category.group)
             category_dict['position'] = position
             db_category = await uow.categories.add_one(user_id, category_dict)
-
-            category_amount_dict = {
-                'category_id': db_category.id,
-                'group': category.group
-            }
-            await uow.categories_amount.add_one(user_id, category_amount_dict)
 
             await uow.commit()
             return db_category
@@ -41,10 +35,6 @@ class CategoriesService:
     ):
         async with uow:
             db_category = await uow.categories.edit_one(user_id, category)
-            await uow.categories_amount.edit_one(
-                db_category.id, amount=category.amount,
-                date=utils.get_start_month_date()
-            )
             await uow.commit()
             return db_category
 
@@ -52,4 +42,19 @@ class CategoriesService:
             self, uow: IUnitOfWork, user_id: int, group: CategoryGroup = None
     ):
         async with uow:
-            return await uow.categories.find_all(user_id=user_id, group=group)
+            categories = await uow.categories.find_all(
+                user_id=user_id, group=group)
+
+            for category in categories:
+                if category.group == CategoryGroup.expense:
+                    category.amount = await uow.transactions.calc_sum(
+                        date_from=get_start_month_date(),
+                        id_category_to=category.id
+                    )
+                elif category.group == CategoryGroup.income:
+                    category.amount = await uow.transactions.calc_sum(
+                        date_from=get_start_month_date(),
+                        id_category_from=category.id
+                    )
+
+            return [x.to_read_model() for x in categories]

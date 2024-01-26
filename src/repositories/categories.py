@@ -49,24 +49,13 @@ class CategoriesRepository(SQLAlchemyRepository):
             date: datetime.date = utils.get_start_month_date(),
             group: Optional[CategoryGroup] = None
     ):
-        query = (select(
-            self.model.id,
-            self.model.name,
-            self.model.group,
-            self.model.icon,
-            self.model.position,
-            CategoryAmount.amount
-        ).join(CategoryAmount, self.model.id == CategoryAmount.category_id)
-         .filter(
-            CategoryAmount.date == date,
-            self.model.user_id == user_id
-        ))
+        query = select(self.model).filter(self.model.user_id == user_id)
 
         if group:
-            query = query.filter(self.model.group == group)
+            query = query.filter_by(group=group)
 
         res = await self.session.execute(query)
-        return res.all()
+        return res.scalars().all()
 
     async def edit_one(self, user_id: int, category: CategoryPut):
         db_category = await self.session.get(self.model, category.id)
@@ -78,6 +67,11 @@ class CategoriesRepository(SQLAlchemyRepository):
         db_category.name = category.name
         db_category.icon = category.icon
         db_category.position = category.position
+        db_category.amount = category.amount
 
         return db_category
 
+    async def calc_sum(self, **filters):
+        query = select(func.sum(self.model.amount)).filter_by(**filters)
+        res = await self.session.execute(query)
+        return res.scalar_one()

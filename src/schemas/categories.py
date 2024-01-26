@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional
+from typing import Optional, Union
 
 from pydantic import BaseModel
 
@@ -13,6 +13,7 @@ class CategorySchema(BaseModel):
     group: CategoryGroup
     icon: str
     position: int
+    amount: float
 
 
 class CategoryAmountSchema(BaseModel):
@@ -21,7 +22,7 @@ class CategoryAmountSchema(BaseModel):
     user_id: int
     group: CategoryGroup
     date: datetime.date
-    amount: int
+    amount: float
 
 
 class CategoryBase(BaseModel):
@@ -35,17 +36,18 @@ class CategorySchemaAdd(CategoryBase):
 
 class CategoryRead(BaseModel):
     id: int
+    user_id: int
     name: str
     group: CategoryGroup
     icon: str
     position: int
-    amount: int
+    amount: float
 
 
 class CategoryPut(BaseModel):
     id: int
     name: str
-    amount: int
+    amount: Union[float, int]
     position: int
     icon: str
 
@@ -55,4 +57,4 @@ class CategoryPatch(BaseModel):
     name: str = ''
     position: int = 0
     icon: str = ''
-    amount: Optional[int] = None
+    amount: Optional[Union[int, float]] = None

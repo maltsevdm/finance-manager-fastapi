@@ -181,7 +181,7 @@ async def patch_category(user_id: int, category: src.schemas.categories.Category
 
 
 async def get_transactions_by_group(
-        db: AsyncSession, user_id: int, group: src.utils.enum_classes.OperationGroup,
+        db: AsyncSession, user_id: int, group: src.utils.enum_classes.TransactionGroup,
         date_from: datetime.date = utils.get_start_month_date(),
         date_to: datetime.date = None
 ):
@@ -225,9 +225,9 @@ async def add_transaction(user_id: int, transaction: src.schemas.transactions.Tr
         await db.commit()
 
         expenses = await get_transactions_by_group(
-            db, user_id, src.utils.enum_classes.OperationGroup.expense)
+            db, user_id, src.utils.enum_classes.TransactionGroup.expense)
         incomes = await get_transactions_by_group(
-            db, user_id, src.utils.enum_classes.OperationGroup.income)
+            db, user_id, src.utils.enum_classes.TransactionGroup.income)
 
         return {
             'new_balance': new_balance,

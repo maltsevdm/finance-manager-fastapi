@@ -5,8 +5,9 @@ from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, TIMESTAMP
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from src.schemas.categories import CategorySchema, CategoryAmountSchema
+from src.schemas.transactions import TransactionSchema
 from src.utils import utils
-from src.utils.enum_classes import CategoryGroup, OperationGroup
+from src.utils.enum_classes import CategoryGroup, TransactionGroup
 
 
 class Base(DeclarativeBase):
@@ -35,6 +36,7 @@ class Category(Base):
     group: Mapped[CategoryGroup] = mapped_column(nullable=False)
     icon: Mapped[str] = mapped_column(nullable=False)
     position: Mapped[int] = mapped_column(nullable=False)
+    amount: Mapped[float] = mapped_column(default=0)
 
     def to_read_model(self) -> CategorySchema:
         return CategorySchema(
@@ -43,7 +45,8 @@ class Category(Base):
             name=self.name,
             group=self.group,
             icon=self.icon,
-            position=self.position
+            position=self.position,
+            amount=self.amount
         )
 
 
@@ -60,7 +63,7 @@ class CategoryAmount(Base):
     group: Mapped[CategoryGroup] = mapped_column(nullable=False)
     date: Mapped[datetime.date] = mapped_column(
         nullable=False, default=utils.get_start_month_date())
-    amount: Mapped[int] = mapped_column(nullable=False, default=0)
+    amount: Mapped[float] = mapped_column(nullable=False, default=0)
 
     def to_read_model(self) -> CategoryAmountSchema:
         return CategoryAmountSchema(
@@ -88,13 +91,25 @@ class Transaction(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
-    group: Mapped[OperationGroup] = mapped_column(nullable=False)
-    category_from: Mapped[int] = mapped_column(
+    group: Mapped[TransactionGroup] = mapped_column(nullable=False)
+    id_category_from: Mapped[int] = mapped_column(
         ForeignKey('category.id', ondelete='CASCADE'),
         nullable=False)
-    category_to: Mapped[int] = mapped_column(
+    id_category_to: Mapped[int] = mapped_column(
         ForeignKey('category.id', ondelete='CASCADE'),
         nullable=False)
-    amount: Mapped[int] = mapped_column(nullable=False)
+    amount: Mapped[float] = mapped_column(nullable=False)
     date: Mapped[datetime.date] = mapped_column(nullable=False)
     note: Mapped[str]
+
+    def to_read_model(self) -> TransactionSchema:
+        return TransactionSchema(
+            id=self.id,
+            user_id=self.user_id,
+            group=self.group,
+            id_category_from=self.id_category_from,
+            id_category_to=self.id_category_to,
+            amount=self.amount,
+            date=self.date,
+            note=self.note,
+        )
