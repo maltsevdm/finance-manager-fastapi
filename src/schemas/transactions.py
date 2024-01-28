@@ -17,15 +17,8 @@ class TransactionSchema(BaseModel):
 
 
 class TransactionCreate(BaseModel):
-    group: TransactionGroup
     id_category_from: int
     id_category_to: int
     amount: float
     date: datetime.date = datetime.date.today()
     note: str = ''
-
-
-class OperationBase(BaseModel):
-    type: str
-    category: str
-    amount: float

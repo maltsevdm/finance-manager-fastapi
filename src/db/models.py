@@ -2,16 +2,13 @@ import datetime
 
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, TIMESTAMP
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column
 
+from src.db.database import Base
 from src.schemas.categories import CategorySchema, CategoryAmountSchema
 from src.schemas.transactions import TransactionSchema
 from src.utils import utils
 from src.utils.enum_classes import CategoryGroup, TransactionGroup
-
-
-class Base(DeclarativeBase):
-    pass
 
 
 class User(SQLAlchemyBaseUserTable[int], Base):

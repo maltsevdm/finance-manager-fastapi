@@ -16,8 +16,6 @@ from src.db.database import get_async_session
 from src.auth.manager import fastapi_users, auth_backend, current_active_user
 from src.auth.schemas import UserRead, UserCreate
 from src.db import core
-from src.api.categories import router as router_categories
-from src.api.transactions import router as router_operations
 
 app = FastAPI()
 router = APIRouter()

@@ -10,8 +10,8 @@ import src.schemas.transactions
 import src.utils.enum_classes
 from src.utils import utils
 from src.db import models
-from src.db.database import async_session, engine
-from src.db.models import Base, User
+from src.db.database import async_session, engine, Base
+from src.db.models import User
 from src.utils.enum_classes import CategoryGroup
 
 categories_start_pack = [

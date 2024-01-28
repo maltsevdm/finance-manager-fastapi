@@ -14,4 +14,4 @@ class Balance(BalanceBase):
     pass
 
     class Config:
-        orm_mode = True
+        from_attributes = True

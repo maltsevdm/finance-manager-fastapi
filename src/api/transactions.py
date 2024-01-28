@@ -1,13 +1,10 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, HTTPException
 
-import src.schemas.transactions
-import src.utils.enum_classes
 from src.api.dependencies import UOWDep
 from src.auth.manager import current_active_user
 from src.db import core
-from src.db.database import get_async_session
 from src.db.models import User
+from src.schemas.transactions import TransactionCreate
 from src.services.transactions import TransactionsService
 
 router = APIRouter(prefix='/transactions', tags=['Transaction'])
@@ -16,18 +13,48 @@ router = APIRouter(prefix='/transactions', tags=['Transaction'])
 @router.post('/')
 async def add_transaction(
         uow: UOWDep,
-        transaction: src.schemas.transactions.TransactionCreate,
+        transaction: TransactionCreate,
         user: User = Depends(current_active_user),
 ):
-    res = await TransactionsService().add_one(uow, user.id, transaction)
+    try:
+        res = await TransactionsService().add_one(uow, user.id, transaction)
+    except ValueError as ex:
+        return HTTPException(status_code=400, detail=ex)
     return res
-    # return await core.add_transaction(user.id, transaction)
 
 
-@router.get('/per_month/')
-async def get_amount_group_for_month(
-        group: src.utils.enum_classes.TransactionGroup,
+@router.delete('/{id}')
+async def remove_transaction(
+        uow: UOWDep,
+        transation_id: int,
         user: User = Depends(current_active_user),
-        db: AsyncSession = Depends(get_async_session)
 ):
-    return await core.get_transactions_by_group(db, user.id, group)
+    try:
+        res = await TransactionsService().remove_one(uow, transation_id, user.id)
+    except (ValueError, PermissionError) as ex:
+        return HTTPException(400, ex)
+    return res
+
+@router.put('/{id}')
+async def update_transaction(
+        uow: UOWDep,
+        transation_id: int,
+        transaction: TransactionCreate,
+        user: User = Depends(current_active_user),
+):
+    try:
+        res = await TransactionsService().update_one(
+            uow, transation_id, transaction, user.id
+        )
+    except (ValueError, PermissionError) as ex:
+        return HTTPException(400, ex)
+    return res
+
+
+# @router.get('/per_month/')
+# async def get_amount_group_for_month(
+#         group: src.utils.enum_classes.TransactionGroup,
+#         user: User = Depends(current_active_user),
+#         db: AsyncSession = Depends(get_async_session)
+# ):
+#     return await core.get_transactions_by_group(db, user.id, group)
