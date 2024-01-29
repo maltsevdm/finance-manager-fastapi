@@ -1,6 +1,7 @@
 /venv
 /migrations
 .env
+.test.env
 .gitignore
 test.py
 config.py

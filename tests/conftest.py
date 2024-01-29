@@ -1,8 +1,8 @@
 import asyncio
+import sys
 from typing import AsyncGenerator
 
 import pytest
-from sqlalchemy import NullPool
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, \
     AsyncSession
 from httpx import AsyncClient
@@ -12,6 +12,9 @@ from main import app
 from src.config import settings
 from src.db.database import get_async_session
 from src import Base
+
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 DATABASE_URL_TEST = settings.DB_URL
 
