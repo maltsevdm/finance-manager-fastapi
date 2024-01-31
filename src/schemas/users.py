@@ -13,5 +13,5 @@ class User(UserBase):
     id: int
     is_active: bool
 
-    class Config:
+    class ConfigDict:
         from_attributes = True

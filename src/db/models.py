@@ -1,7 +1,8 @@
 import datetime
 
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, TIMESTAMP
+from sqlalchemy import (Boolean, Column, ForeignKey, Integer, String, TIMESTAMP,
+                        Index)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.database import Base
@@ -35,6 +36,12 @@ class Category(Base):
     position: Mapped[int] = mapped_column(nullable=False)
     amount: Mapped[float] = mapped_column(default=0)
 
+    __table_args__ = (
+        Index('user_group_name_index', 'user_id', 'name', 'group', unique=True),
+    )
+
+    repr_cols = 7
+
     def to_read_model(self) -> CategorySchema:
         return CategorySchema(
             id=self.id,
@@ -61,6 +68,8 @@ class CategoryAmount(Base):
     date: Mapped[datetime.date] = mapped_column(
         nullable=False, default=utils.get_start_month_date())
     amount: Mapped[float] = mapped_column(nullable=False, default=0)
+
+    repr_cols = 6
 
     def to_read_model(self) -> CategoryAmountSchema:
         return CategoryAmountSchema(
@@ -98,6 +107,8 @@ class Transaction(Base):
     amount: Mapped[float] = mapped_column(nullable=False)
     date: Mapped[datetime.date] = mapped_column(nullable=False)
     note: Mapped[str]
+
+    repr_cols = 8
 
     def to_read_model(self) -> TransactionSchema:
         return TransactionSchema(

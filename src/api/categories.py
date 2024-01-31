@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 
 from src.api.dependencies import UOWDep
 from src.auth.manager import current_active_user
@@ -19,7 +20,14 @@ async def add_category(
         category: CategorySchemaAdd,
         user: User = Depends(current_active_user),
 ):
-    category = await CategoriesService().add_one(uow, user.id, category)
+    try:
+        category = await CategoriesService().add_one(uow, user.id, category)
+    except IntegrityError:
+        raise HTTPException(
+            status_code=400,
+            detail=f'В категории {category.group.value} уже есть категория с '
+                   f'именем {category.name}'
+        )
     return category
 
 

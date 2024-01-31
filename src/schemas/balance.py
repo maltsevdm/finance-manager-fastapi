@@ -13,5 +13,5 @@ class BalanceCreate(BalanceBase):
 class Balance(BalanceBase):
     pass
 
-    class Config:
+    class ConfigDict:
         from_attributes = True
