@@ -45,7 +45,6 @@ class CategoryRead(BaseModel):
 
 
 class CategoryPut(BaseModel):
-    id: int
     name: str
     amount: Union[float, int]
     position: int
@@ -53,8 +52,7 @@ class CategoryPut(BaseModel):
 
 
 class CategoryPatch(BaseModel):
-    id: int
-    name: str = ''
-    position: int = 0
-    icon: str = ''
-    amount: Optional[Union[int, float]] = None
+    name: Optional[str] = None
+    amount: Union[float, int, None] = None
+    position: Optional[int] = None
+    icon: Optional[str] = None

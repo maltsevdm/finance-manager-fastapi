@@ -1,4 +1,6 @@
-from src.schemas.categories import CategorySchemaAdd, CategoryPut
+from typing import Union
+
+from src.schemas.categories import CategorySchemaAdd, CategoryPut, CategoryPatch
 from src.utils.enum_classes import CategoryGroup
 from src.utils.unit_of_work import IUnitOfWork
 from src.utils.utils import get_start_month_date
@@ -31,10 +33,12 @@ class CategoriesService:
             return db_category
 
     async def update_one(
-            self, uow: IUnitOfWork, user_id: int, category: CategoryPut
+            self, uow: IUnitOfWork, id: int, user_id: int,
+            category: Union[CategoryPut, CategoryPatch]
     ):
         async with uow:
-            db_category = await uow.categories.edit_one(user_id, category)
+            db_category = await uow.categories.edit_one(user_id, id,
+                                                        category.model_dump())
             await uow.commit()
             return db_category
 

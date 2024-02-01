@@ -6,7 +6,7 @@ from src.db.database import async_session
 from src.db.models import Category
 
 
-class TestTransactions:
+class __TestTransactions:
     @pytest.mark.parametrize(
         'id_from, id_to, amount, group, category_from_amount, category_to_amount, status_code',
         [

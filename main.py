@@ -56,21 +56,6 @@ async def start_app():
     await core.create_tables()
 
 
-@router.get("/protected-route")
-def protected_route(user: User = Depends(current_active_user)):
-    return f"Hello, {user.username}"
-
-
-@router.get('/test/all')
-def get_test():
-    return 'Hello, World'
-
-
-@router.get('/test/user')
-def get_test_user(user: User = Depends(current_active_user)):
-    return f'Protected route for {user.username}'
-
-
 @router.get("/unprotected-route")
 def unprotected_route():
     return f"Hello, anonym"

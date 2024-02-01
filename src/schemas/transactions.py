@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -22,3 +23,11 @@ class TransactionCreate(BaseModel):
     amount: float
     date: datetime.date = datetime.date.today()
     note: str = ''
+
+
+class TransactionUpdate(BaseModel):
+    id_category_from: Optional[int] = None
+    id_category_to: Optional[int] = None
+    amount: Optional[float] = None
+    date: Optional[datetime.date] = None
+    note: Optional[str] = None

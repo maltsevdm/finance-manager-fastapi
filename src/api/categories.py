@@ -31,35 +31,28 @@ async def add_category(
     return category
 
 
-@router.put('/')
-async def put_category(
-        uow: UOWDep,
-        category: CategoryPut,
-        user: User = Depends(current_active_user),
-):
-    res = await CategoriesService().update_one(uow, user.id, category)
-    return res
-
-
-@router.patch('/')
+@router.patch('/{id}')
 async def patch_category(
+        uow: UOWDep,
+        id: int,
         category: CategoryPatch,
         user: User = Depends(current_active_user),
 ):
-    return await core.patch_category(user.id, category)
+    res = await CategoriesService().update_one(uow, id, user.id, category)
+    return res
 
 
-@router.delete('/')
+@router.delete('/{id}')
 async def remove_category(
         uow: UOWDep,
-        category_id: int,
+        id: int,
         user: User = Depends(current_active_user),
 ):
     try:
-        res = await CategoriesService().remove_one(uow, user.id, category_id)
+        res = await CategoriesService().remove_one(uow, user.id, id)
     except NoResultFound:
         raise HTTPException(status_code=400,
-                            detail=f'Нет категории с {category_id=}')
+                            detail=f'Нет категории с {id=}')
     return res
 
 
@@ -72,9 +65,18 @@ async def get_categories(
 
 
 @router.get('/{group}', response_model=list[CategoryRead])
-async def get_categories(
+async def get_categories_by_group(
         uow: UOWDep,
         group: CategoryGroup,
+        user: User = Depends(current_active_user)
+):
+    res = await CategoriesService().get_categories(uow, user.id, group)
+    return res
+
+@router.get('/{id}', response_model=CategoryRead)
+async def get_categories_by_id(
+        uow: UOWDep,
+        id: int,
         user: User = Depends(current_active_user)
 ):
     res = await CategoriesService().get_categories(uow, user.id, group)

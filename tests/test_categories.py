@@ -7,6 +7,15 @@ from src.db.models import Category
 
 
 class TestCategories:
+    async def check_order(self, group):
+        async with async_session() as db:
+            query = select(Category).filter_by(group=group)
+            categories = (await db.execute(query)).scalars().all()
+            i = 1
+            for category in sorted(categories, key=lambda x: x.position):
+                assert category.position == i
+                i += 1
+
     @pytest.mark.parametrize(
         'name, group, position, status_code',
         [
@@ -26,12 +35,12 @@ class TestCategories:
             self, ac: AsyncClient, token, name, group, position, status_code
     ):
         response = await ac.post(
-            "/api/categories",
+            '/api/categories',
             json=
             {
-                "name": name,
-                "group": group,
-                "icon": "string"
+                'name': name,
+                'group': group,
+                'icon': 'string'
             },
             cookies={'value': token}
         )
@@ -78,7 +87,7 @@ class TestCategories:
             self, ac: AsyncClient, token, id, status_code
     ):
         response = await ac.delete(
-            f"/api/categories/?category_id={id}",
+            f'/api/categories/{id}',
             cookies={'value': token}
         )
 
@@ -86,10 +95,38 @@ class TestCategories:
         if status_code != 200:
             return
 
-        async with async_session() as db:
-            query = select(Category).filter_by(group=response.json()['group'])
-            categories = (await db.execute(query)).scalars().all()
-            i = 1
-            for category in sorted(categories, key=lambda x: x.position):
-                assert category.position == i
-                i += 1
+        await self.check_order(response.json()['group'])
+
+    @pytest.mark.parametrize(
+        'id, data, status_code',
+        [
+            (4, {'amount': 5000}, 200),
+            (4, {'position': 2}, 200),
+            (4, {'name': 'no products'}, 200),
+            (4, {'icon': 'new icon'}, 200),
+            (4, {'position': 1}, 200),
+        ]
+    )
+    async def test_update_category(
+            self, ac: AsyncClient, token, id, data, status_code
+    ):
+        response = await ac.patch(
+            f'/api/categories/{id}',
+            json=data,
+            cookies={'value': token}
+        )
+        assert response.status_code == status_code
+        if status_code != 200:
+            return
+
+        category = response.json()
+        if 'amount' in data:
+            assert category['amount'] == data['amount']
+
+        await self.check_order(category['group'])
+
+        if 'name' in data:
+            assert category['name'] == data['name']
+
+        if 'icon' in data:
+            assert category['icon'] == data['icon']

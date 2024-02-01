@@ -1,7 +1,7 @@
 import datetime
 from typing import Optional
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update
 
 from src.db.models import Category, CategoryAmount
 from src.utils import utils
@@ -57,17 +57,21 @@ class CategoriesRepository(SQLAlchemyRepository):
         res = await self.session.execute(query)
         return res.scalars().all()
 
-    async def edit_one(self, user_id: int, category: CategoryPut):
-        db_category = await self.session.get(self.model, category.id)
-        if db_category.position != category.position:
-            await self.update_positions(
-                user_id, db_category.group, category.position,
-                db_category.position)
+    async def edit_one(self, user_id: int, id: int, data: dict):
+        db_category = await self.session.get(self.model, id)
 
-        db_category.name = category.name
-        db_category.icon = category.icon
-        db_category.position = category.position
-        db_category.amount = category.amount
+        if data['name'] is not None:
+            db_category.name = data['name']
+        if data['icon'] is not None:
+            db_category.icon = data['icon']
+        if data['amount'] is not None:
+            db_category.amount = data['amount']
+        if data['position'] is not None:
+            if db_category.position != data['position']:
+                await self.update_positions(
+                    user_id, db_category.group, data['position'],
+                    db_category.position)
+            db_category.position = data['position']
 
         return db_category
 

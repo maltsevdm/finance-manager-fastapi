@@ -1,3 +1,5 @@
+import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import NoResultFound
 
@@ -5,7 +7,7 @@ from src.api.dependencies import UOWDep
 from src.auth.manager import current_active_user
 from src.db import core
 from src.db.models import User
-from src.schemas.transactions import TransactionCreate
+from src.schemas.transactions import TransactionCreate, TransactionUpdate
 from src.services.transactions import TransactionsService
 
 router = APIRouter(prefix='/transactions', tags=['Transaction'])
@@ -31,36 +33,35 @@ async def add_transaction(
 @router.delete('/{id}')
 async def remove_transaction(
         uow: UOWDep,
-        transation_id: int,
+        id: int,
         user: User = Depends(current_active_user),
 ):
     try:
-        res = await TransactionsService().remove_one(uow, transation_id,
-                                                     user.id)
+        res = await TransactionsService().remove_one(uow, id, user.id)
     except (ValueError, PermissionError) as ex:
         raise HTTPException(400, ex)
     return res
 
 
-@router.put('/{id}')
+@router.patch('/{id}')
 async def update_transaction(
         uow: UOWDep,
-        transation_id: int,
-        transaction: TransactionCreate,
+        id: int,
+        transaction: TransactionUpdate,
         user: User = Depends(current_active_user),
 ):
     try:
         res = await TransactionsService().update_one(
-            uow, transation_id, transaction, user.id
+            uow, id, transaction, user.id
         )
     except (ValueError, PermissionError) as ex:
         return HTTPException(400, ex)
     return res
 
-# @router.get('/per_month/')
-# async def get_amount_group_for_month(
-#         group: src.utils.enum_classes.TransactionGroup,
-#         user: User = Depends(current_active_user),
-#         db: AsyncSession = Depends(get_async_session)
-# ):
-#     return await core.get_transactions_by_group(db, user.id, group)
+@router.get('/{date_from}-{date_to}')
+async def get_amount_group_for_month(
+        date_from: datetime.date,
+        date_to: datetime.date,
+        user: User = Depends(current_active_user),
+):
+    return await core.get_transactions_by_group(db, user.id, group)
