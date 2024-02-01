@@ -6,40 +6,46 @@ from src.db.database import async_session
 from src.db.models import Category
 
 
-class TestCategories:
+class TestTransactions:
     @pytest.mark.parametrize(
-        'name, group, position, status_code',
+        'id_from, id_to, amount, group, category_from_amount, category_to_amount, status_code',
         [
-            ('products', 'expense', 1, 200),  # id = 1
-            ('transport', 'expense', 2, 200),  # id = 2
-            ('other', 'expense', 3, 200),  # id = 3
-            ('tinkoff black', 'bank', 1, 200),  # id = 4
-            ('tinkoff s7', 'bank', 2, 200),  # id = 5
-            ('alpha', 'bank', 3, 200),  # id = 6
-            ('parents', 'income', 1, 200),  # id = 7
-            ('salary', 'income', 2, 200),  # id = 8
-            ('salary', 'incom', 3, 422),  # Неправильное имя группы
-            ('salary', 'income', 3, 400),  # Повторяющееся имя категории
+            (6, 3, 500, 'expense', -500, 0, 200),  # id = 1
+            (7, 6, 600, 'income', 0, 100, 200),  # id = 2
+            (4, 6, 700, 'transfer', -700, 800, 200),  # id = 3
+            (5, 3, 500, 'expense', 0, 0, 400),  # Неверный id
+            (4, 7, 500, 'expense', 0, 0, 400),  # Неправильное направление
+            (4, 6, '100', 'transfer', -800, 900, 200),  # Сумма строкой, но в ней число
+            (4, 6, 'aaa', 'transfer', -800, 900, 422),  # Сумма строкой, но в ней буквы
         ]
     )
-    async def test_add_category(
-            self, ac: AsyncClient, token, name, group, position, status_code
+    async def test_add_transaction(
+            self, ac: AsyncClient, token, id_from, id_to, group, amount,
+            status_code, category_from_amount, category_to_amount
     ):
         response = await ac.post(
-            "/api/categories",
+            '/api/transactions',
             json=
             {
-                "name": name,
-                "group": group,
-                "icon": "string"
+                'id_category_from': id_from,
+                'id_category_to': id_to,
+                'amount': amount,
             },
             cookies={'value': token}
         )
 
-        category = response.json()
         assert response.status_code == status_code
-        if status_code == 200:
-            assert category['position'] == position
+        if status_code != 200:
+            return
+        transaction = response.json()
+        assert transaction['group'] == group
+
+        async with async_session() as db:
+            category_from = await db.get(Category, id_from)
+            category_to = await db.get(Category, id_to)
+
+            assert category_from.amount == category_from_amount
+            assert category_to.amount == category_to_amount
 
     @pytest.mark.parametrize(
         'group, count, status_code',
@@ -51,7 +57,7 @@ class TestCategories:
             ('incom', 0, 422),  # Неправильное имя группы
         ]
     )
-    async def test_get_categories(
+    async def _test_get_categories(
             self, ac: AsyncClient, token, group, count, status_code
     ):
         if group:
@@ -70,15 +76,16 @@ class TestCategories:
         [
             (1, 200),
             (5, 200),
+            (4, 200),
             (8, 200),
             (9, 400),  # Несуществующий индекс
         ]
     )
-    async def test_remove_category(
+    async def _test_remove_category(
             self, ac: AsyncClient, token, id, status_code
     ):
         response = await ac.delete(
-            f"/api/categories/?category_id={id}",
+            f'/api/categories/?category_id={id}',
             cookies={'value': token}
         )
 

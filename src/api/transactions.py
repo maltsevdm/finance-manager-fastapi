@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import NoResultFound
 
 from src.api.dependencies import UOWDep
 from src.auth.manager import current_active_user
@@ -18,8 +19,12 @@ async def add_transaction(
 ):
     try:
         res = await TransactionsService().add_one(uow, user.id, transaction)
-    except ValueError as ex:
-        return HTTPException(status_code=400, detail=ex)
+    except NoResultFound:
+        raise HTTPException(status_code=400,
+                            detail='Одна из категорий не существует')
+    except ValueError:
+        raise HTTPException(status_code=400,
+                            detail='Неверное направление транзакции')
     return res
 
 
@@ -30,10 +35,12 @@ async def remove_transaction(
         user: User = Depends(current_active_user),
 ):
     try:
-        res = await TransactionsService().remove_one(uow, transation_id, user.id)
+        res = await TransactionsService().remove_one(uow, transation_id,
+                                                     user.id)
     except (ValueError, PermissionError) as ex:
-        return HTTPException(400, ex)
+        raise HTTPException(400, ex)
     return res
+
 
 @router.put('/{id}')
 async def update_transaction(
@@ -49,7 +56,6 @@ async def update_transaction(
     except (ValueError, PermissionError) as ex:
         return HTTPException(400, ex)
     return res
-
 
 # @router.get('/per_month/')
 # async def get_amount_group_for_month(

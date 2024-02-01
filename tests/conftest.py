@@ -11,11 +11,11 @@ from src.config import settings
 from src.db.database import engine
 from src import Base
 
-
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 client = TestClient(app)
+
 
 @pytest.fixture(scope='session', autouse=True)
 async def prepare_database():
@@ -59,16 +59,12 @@ async def token(ac: AsyncClient) -> str:
 
 
 @pytest.fixture(scope='session')
-def event_loop(request):
-    """Create an instance of the default event loop for each test case."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+def event_loop():
+    policy = asyncio.get_event_loop_policy()
+    loop = policy.new_event_loop()
     yield loop
     loop.close()
 
-
-# @pytest.fixture(scope="session")
-# def anyio_backend():
-#     return "asyncio"
 
 @pytest.fixture(scope="session")
 async def ac() -> AsyncGenerator[AsyncClient, None]:

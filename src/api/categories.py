@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from src.api.dependencies import UOWDep
 from src.auth.manager import current_active_user
@@ -55,7 +55,11 @@ async def remove_category(
         category_id: int,
         user: User = Depends(current_active_user),
 ):
-    res = await CategoriesService().remove_one(uow, user.id, category_id)
+    try:
+        res = await CategoriesService().remove_one(uow, user.id, category_id)
+    except NoResultFound:
+        raise HTTPException(status_code=400,
+                            detail=f'Нет категории с {category_id=}')
     return res
 
 
