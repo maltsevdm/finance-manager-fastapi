@@ -10,6 +10,7 @@ from src.db.models import User
 from src.schemas.transactions import (
     TransactionAdd, TransactionUpdate, TransactionRead)
 from src.services.transactions import TransactionsService
+from src.utils import utils
 
 router = APIRouter(prefix='/transactions', tags=['Transaction'])
 
@@ -63,6 +64,15 @@ async def update_transaction(
                             detail=f'Нет транзакции с {id=}')
     return res
 
+
+@router.get('/')
+async def get_transactions(
+        uow: UOWDep,
+        id: int | None = None,
+        date_from: datetime.date = utils.get_start_month_date(),
+        date_to: datetime.date = utils.get_end_month_date()
+):
+    ...
 
 @router.get('/{date_from}-{date_to}')
 async def get_amount_group_for_month(
