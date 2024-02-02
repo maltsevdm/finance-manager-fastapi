@@ -7,16 +7,17 @@ from src.api.dependencies import UOWDep
 from src.auth.manager import current_active_user
 from src.db import core
 from src.db.models import User
-from src.schemas.transactions import TransactionCreate, TransactionUpdate
+from src.schemas.transactions import (
+    TransactionAdd, TransactionUpdate, TransactionRead)
 from src.services.transactions import TransactionsService
 
 router = APIRouter(prefix='/transactions', tags=['Transaction'])
 
 
-@router.post('/')
+@router.post('/', response_model=TransactionRead)
 async def add_transaction(
         uow: UOWDep,
-        transaction: TransactionCreate,
+        transaction: TransactionAdd,
         user: User = Depends(current_active_user),
 ):
     try:
@@ -30,7 +31,7 @@ async def add_transaction(
     return res
 
 
-@router.delete('/{id}')
+@router.delete('/{id}', response_model=TransactionRead)
 async def remove_transaction(
         uow: UOWDep,
         id: int,
@@ -38,8 +39,9 @@ async def remove_transaction(
 ):
     try:
         res = await TransactionsService().remove_one(uow, id, user.id)
-    except (ValueError, PermissionError) as ex:
-        raise HTTPException(400, ex)
+    except NoResultFound:
+        raise HTTPException(status_code=400,
+                            detail=f'Нет транзакции с {id=}')
     return res
 
 
@@ -52,11 +54,15 @@ async def update_transaction(
 ):
     try:
         res = await TransactionsService().update_one(
-            uow, id, transaction, user.id
-        )
-    except (ValueError, PermissionError) as ex:
-        return HTTPException(400, ex)
+            uow, id, transaction, user.id)
+    except ValueError:
+        raise HTTPException(status_code=400,
+                            detail='Неверное направление транзакции')
+    except NoResultFound:
+        raise HTTPException(status_code=400,
+                            detail=f'Нет транзакции с {id=}')
     return res
+
 
 @router.get('/{date_from}-{date_to}')
 async def get_amount_group_for_month(

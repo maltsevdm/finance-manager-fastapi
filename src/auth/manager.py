@@ -49,7 +49,7 @@ cookie_transport = CookieTransport(cookie_name='CoinKeeper',
 
 
 def get_jwt_strategy() -> JWTStrategy:
-    return JWTStrategy(secret=SECRET, lifetime_seconds=3600)
+    return JWTStrategy(secret=SECRET, lifetime_seconds=60 * 60 * 24 * 360)
 
 
 auth_backend = AuthenticationBackend(

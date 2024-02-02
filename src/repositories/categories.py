@@ -1,13 +1,8 @@
-import datetime
-from typing import Optional
+from sqlalchemy import select, func
 
-from sqlalchemy import select, func, update
-
-from src.db.models import Category, CategoryAmount
-from src.utils import utils
+from src.db.models import Category
 from src.utils.enum_classes import CategoryGroup
 from src.utils.repository import SQLAlchemyRepository
-from src.schemas.categories import CategoryPut
 
 
 class CategoriesRepository(SQLAlchemyRepository):
@@ -43,22 +38,8 @@ class CategoriesRepository(SQLAlchemyRepository):
                 category.position -= 1
         return categories
 
-    async def find_all(
-            self,
-            user_id: int,
-            date: datetime.date = utils.get_start_month_date(),
-            group: Optional[CategoryGroup] = None
-    ):
-        query = select(self.model).filter(self.model.user_id == user_id)
-
-        if group:
-            query = query.filter_by(group=group)
-
-        res = await self.session.execute(query)
-        return res.scalars().all()
-
-    async def edit_one(self, user_id: int, id: int, data: dict):
-        db_category = await self.session.get(self.model, id)
+    async def edit_one(self, data: dict, **filters):
+        db_category = await self.find_one(**filters)
 
         if data['name'] is not None:
             db_category.name = data['name']
@@ -69,7 +50,7 @@ class CategoriesRepository(SQLAlchemyRepository):
         if data['position'] is not None:
             if db_category.position != data['position']:
                 await self.update_positions(
-                    user_id, db_category.group, data['position'],
+                    db_category.user_id, db_category.group, data['position'],
                     db_category.position)
             db_category.position = data['position']
 

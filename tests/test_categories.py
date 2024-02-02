@@ -1,9 +1,10 @@
 import pytest
 from httpx import AsyncClient
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
 from src.db.database import async_session
 from src.db.models import Category
+from src.repositories.categories import CategoriesRepository
 
 
 class TestCategories:
@@ -19,7 +20,7 @@ class TestCategories:
     @pytest.mark.parametrize(
         'name, group, position, status_code',
         [
-            ('products', 'expense', 1, 200),  # id = 1
+            ('products', 'expense', '', 1, 200),  # id = 1
             ('transport', 'expense', 2, 200),  # id = 2
             ('other', 'expense', 3, 200),  # id = 3
             ('tinkoff black', 'bank', 1, 200),  # id = 4
@@ -40,11 +41,10 @@ class TestCategories:
             {
                 'name': name,
                 'group': group,
-                'icon': 'string'
+                # 'icon': 'string'
             },
             cookies={'value': token}
         )
-
         category = response.json()
         assert response.status_code == status_code
         if status_code == 200:
@@ -130,3 +130,29 @@ class TestCategories:
 
         if 'icon' in data:
             assert category['icon'] == data['icon']
+
+    async def truncate_table(self, session, model):
+        stmt = delete(model)
+        await session.execute(stmt)
+
+    async def test_get_category_by_id(self, ac: AsyncClient, token):
+        async with async_session() as session:
+            await self.truncate_table(session, Category)
+
+            data = {
+                'user_id': 1,
+                'group': 'income',
+                'name': 'salary',
+                'icon': 'string',
+                'position': 1
+            }
+
+            category = await CategoriesRepository(session).add_one(data)
+
+            response = await ac.get(
+                f'/api/categories/{category.id}',
+                cookies={'value': token}
+            )
+            print(response.json())
+
+

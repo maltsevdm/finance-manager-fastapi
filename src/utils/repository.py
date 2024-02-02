@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 class AbstractRepository(ABC):
     @abstractmethod
-    async def add_one(self, user_id: int, data: dict):
+    async def add_one(self, data: dict):
         raise NotImplemented
 
     @abstractmethod
@@ -20,13 +20,13 @@ class SQLAlchemyRepository(AbstractRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def add_one(self, user_id: int, data: dict):
-        stmt = (insert(self.model).values(user_id=user_id, **data)
+    async def add_one(self, data: dict):
+        stmt = (insert(self.model).values(**data)
                 .returning(self.model))
         res = await self.session.execute(stmt)
         return res.scalar_one()
 
-    async def edit_one(self, id: int, **data):
+    async def edit_one(self, id: int, data: dict):
         stmt = (update(self.model).values(**data).filter_by(id=id)
                 .returning(self.model))
         res = await self.session.execute(stmt)
@@ -37,13 +37,10 @@ class SQLAlchemyRepository(AbstractRepository):
         res = await self.session.execute(query)
         return res.scalar_one()
 
-    async def find_all(self, order_by=None, **filters) -> list:
+    async def find_all(self, **filters):
         query = select(self.model).filter_by(**filters)
-        if order_by:
-            query = query.order_by(order_by)
         res = await self.session.execute(query)
-        res = [row[0].to_read_model() for row in res.all()]
-        return res
+        return res.scalars().all()
 
     async def drop_one(self, **filters):
         stmt = delete(self.model).filter_by(**filters).returning(self.model)
@@ -53,4 +50,4 @@ class SQLAlchemyRepository(AbstractRepository):
     async def drop_several(self, **filters):
         stmt = delete(self.model).filter_by(**filters).returning(self.model)
         res = await self.session.execute(stmt)
-        return [row[0].to_read_model() for row in res.all()]
+        return res.scalars().all()

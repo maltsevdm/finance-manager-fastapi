@@ -35,6 +35,12 @@ router.include_router(
     tags=["auth"],
 )
 
+router.include_router(
+    fastapi_users.get_reset_password_router(),
+    prefix="/auth",
+    tags=["auth"],
+)
+
 origins = [
     'http://localhost:3000',
     'http://192.168.1.161:3000',

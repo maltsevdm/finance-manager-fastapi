@@ -1,13 +1,12 @@
 import datetime
+from typing import Optional
 
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
 from sqlalchemy import (Boolean, Column, ForeignKey, Integer, String, TIMESTAMP,
-                        Index)
+                        Index, Float, text)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.database import Base
-from src.schemas.categories import CategorySchema, CategoryAmountSchema
-from src.schemas.transactions import TransactionSchema
 from src.utils import utils
 from src.utils.enum_classes import CategoryGroup, TransactionGroup
 
@@ -28,30 +27,18 @@ class Category(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     user_id: Mapped[int] = mapped_column(
-        ForeignKey('user.id', ondelete='CASCADE'),
-        nullable=False)
-    name: Mapped[str] = mapped_column(nullable=False)
-    group: Mapped[CategoryGroup] = mapped_column(nullable=False)
-    icon: Mapped[str] = mapped_column(nullable=False)
-    position: Mapped[int] = mapped_column(nullable=False)
-    amount: Mapped[float] = mapped_column(default=0)
+        ForeignKey('user.id', ondelete='CASCADE'))
+    name: Mapped[str]
+    group: Mapped[CategoryGroup]
+    icon: Mapped[str | None]
+    position: Mapped[int]
+    amount: Mapped[float] = mapped_column(server_default=text('0'))
 
     __table_args__ = (
         Index('user_group_name_index', 'user_id', 'name', 'group', unique=True),
     )
 
-    repr_cols = 7
-
-    def to_read_model(self) -> CategorySchema:
-        return CategorySchema(
-            id=self.id,
-            user_id=self.user_id,
-            name=self.name,
-            group=self.group,
-            icon=self.icon,
-            position=self.position,
-            amount=self.amount
-        )
+    repr_cols_num = 7
 
 
 class CategoryAmount(Base):
@@ -69,17 +56,7 @@ class CategoryAmount(Base):
         nullable=False, default=utils.get_start_month_date())
     amount: Mapped[float] = mapped_column(nullable=False, default=0)
 
-    repr_cols = 6
-
-    def to_read_model(self) -> CategoryAmountSchema:
-        return CategoryAmountSchema(
-            id=self.id,
-            category_id=self.category_id,
-            user_id=self.user_id,
-            group=self.group,
-            date=self.date,
-            amount=self.amount
-        )
+    repr_cols_num = 6
 
 
 class Balance(Base):
@@ -96,28 +73,14 @@ class Transaction(Base):
     __tablename__ = 'transaction'
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey('user.id'), nullable=False)
-    group: Mapped[TransactionGroup] = mapped_column(nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey('user.id'))
+    group: Mapped[TransactionGroup]
     id_category_from: Mapped[int] = mapped_column(
-        ForeignKey('category.id', ondelete='CASCADE'),
-        nullable=False)
+        ForeignKey('category.id', ondelete='CASCADE'))
     id_category_to: Mapped[int] = mapped_column(
-        ForeignKey('category.id', ondelete='CASCADE'),
-        nullable=False)
-    amount: Mapped[float] = mapped_column(nullable=False)
-    date: Mapped[datetime.date] = mapped_column(nullable=False)
-    note: Mapped[str]
+        ForeignKey('category.id', ondelete='CASCADE'))
+    amount: Mapped[float]
+    date: Mapped[datetime.date]
+    note: Mapped[str | None]
 
-    repr_cols = 8
-
-    def to_read_model(self) -> TransactionSchema:
-        return TransactionSchema(
-            id=self.id,
-            user_id=self.user_id,
-            group=self.group,
-            id_category_from=self.id_category_from,
-            id_category_to=self.id_category_to,
-            amount=self.amount,
-            date=self.date,
-            note=self.note,
-        )
+    repr_cols_num = 8

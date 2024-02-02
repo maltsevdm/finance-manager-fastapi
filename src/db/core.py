@@ -15,18 +15,18 @@ from src.db.models import User
 from src.utils.enum_classes import CategoryGroup
 
 categories_start_pack = [
-    src.schemas.categories.CategorySchemaAdd(name='Продукты', group=CategoryGroup.expense,
-                                             icon='products.png'),
-    src.schemas.categories.CategorySchemaAdd(name='Еда вне дома', group=CategoryGroup.expense,
-                                             icon='icons8-food-bar-100.png'),
-    src.schemas.categories.CategorySchemaAdd(name='Транспорт', group=CategoryGroup.expense,
-                                             icon='transport.png'),
-    src.schemas.categories.CategorySchemaAdd(name='Услуги', group=CategoryGroup.expense,
-                                             icon='icons8-scissors-100.png'),
-    src.schemas.categories.CategorySchemaAdd(name='Прочее', group=CategoryGroup.expense,
-                                             icon='icons8-other-100.png'),
-    src.schemas.categories.CategorySchemaAdd(name='Tinkoff Black', group=CategoryGroup.bank,
-                                             icon='money.png'),
+    src.schemas.categories.CategoryAdd(name='Продукты', group=CategoryGroup.expense,
+                                       icon='products.png'),
+    src.schemas.categories.CategoryAdd(name='Еда вне дома', group=CategoryGroup.expense,
+                                       icon='icons8-food-bar-100.png'),
+    src.schemas.categories.CategoryAdd(name='Транспорт', group=CategoryGroup.expense,
+                                       icon='transport.png'),
+    src.schemas.categories.CategoryAdd(name='Услуги', group=CategoryGroup.expense,
+                                       icon='icons8-scissors-100.png'),
+    src.schemas.categories.CategoryAdd(name='Прочее', group=CategoryGroup.expense,
+                                       icon='icons8-other-100.png'),
+    src.schemas.categories.CategoryAdd(name='Tinkoff Black', group=CategoryGroup.bank,
+                                       icon='money.png'),
 ]
 
 
@@ -37,7 +37,7 @@ async def create_tables():
 
 
 async def add_category(
-        user_id: int, category: src.schemas.categories.CategorySchemaAdd
+        user_id: int, category: src.schemas.categories.CategoryAdd
 ):
     async with async_session() as db:
         query = (select(func.max(models.Category.position))
@@ -125,7 +125,7 @@ async def update_category_positions(
     return categories
 
 
-async def update_category(user_id: int, category: src.schemas.categories.CategoryPut):
+async def update_category(user_id: int, category: src.schemas.categories.CategoryUpdate):
     async with async_session() as db:
         db_category = await db.get(models.Category, category.id)
         if db_category.position != category.position:
@@ -148,16 +148,16 @@ async def update_category(user_id: int, category: src.schemas.categories.Categor
         return db_category
 
 
-async def get_category_amount(
-        db: AsyncSession, category_id: int,
-        date: datetime.date = utils.get_start_month_date()
-) -> models.CategoryAmount:
-    query = (select(models.CategoryAmount)
-             .filter_by(category_id=category_id, date=date))
-    return (await db.execute(query)).scalars().one()
+# async def get_category_amount(
+#         db: AsyncSession, category_id: int,
+#         date: datetime.date = utils.get_start_month_date()
+# ) -> models.CategoryAmount:
+#     query = (select(models.CategoryAmount)
+#              .filter_by(category_id=category_id, date=date))
+#     return (await db.execute(query)).scalars().one()
 
 
-async def patch_category(user_id: int, category: src.schemas.categories.CategoryPatch):
+async def patch_category(user_id: int, category: src.schemas.categories.CategoryUpdate):
     async with async_session() as db:
         db_category = await db.get(models.Category, category.id)
 
@@ -196,7 +196,7 @@ async def get_transactions_by_group(
     return result
 
 
-async def add_transaction(user_id: int, transaction: src.schemas.transactions.TransactionCreate):
+async def add_transaction(user_id: int, transaction: src.schemas.transactions.TransactionAdd):
     async with async_session() as db:
         query = (select(models.CategoryAmount)
                  .filter_by(category_id=transaction.id_category_from,
@@ -293,7 +293,7 @@ async def prepare_db_for_user(user_id: int):
             for name, group, icon, amount, position in user_categories:
                 await add_category(
                     db, user_id,
-                    src.schemas.categories.CategorySchemaAdd(
+                    src.schemas.categories.CategoryAdd(
                         name=name, group=group, icon=icon,
                         amount=amount if group == CategoryGroup.bank else 0,
                         position=position

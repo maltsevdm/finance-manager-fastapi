@@ -7,5 +7,5 @@ router = APIRouter()
 
 
 @router.get('/add')
-async def add_operation(operation: src.schemas.transactions.TransactionCreate):
+async def add_operation(operation: src.schemas.transactions.TransactionAdd):
     return await core.add_transaction(operation)
