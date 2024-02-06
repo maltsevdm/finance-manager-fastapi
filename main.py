@@ -14,7 +14,7 @@ from src.db.models import User
 from src.utils.enum_classes import TransactionGroup
 from src.db.database import get_async_session
 from src.auth.manager import fastapi_users, auth_backend, current_active_user
-from src.auth.schemas import UserRead, UserCreate
+from src.auth.schemas import UserRead, UserCreate, UserUpdate
 from src.db import core
 
 app = FastAPI()
@@ -22,6 +22,12 @@ router = APIRouter()
 
 for api_router in all_routers:
     router.include_router(api_router)
+
+router.include_router(
+    fastapi_users.get_users_router(UserRead, UserUpdate),
+    prefix="/users",
+    tags=["users"],
+)
 
 router.include_router(
     fastapi_users.get_auth_router(auth_backend),

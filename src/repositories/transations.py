@@ -1,7 +1,7 @@
 import datetime
 from typing import Optional, Union
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, between
 
 from src.db.models import Transaction
 from src.utils.repository import SQLAlchemyRepository
@@ -24,3 +24,12 @@ class TransactionsRepository(SQLAlchemyRepository):
         result = await self.session.execute(query)
         result = result.scalar_one()
         return result if result else 0
+
+    async def find_all_between_dates(
+            self, date_from: datetime.date, date_to: datetime.date, **filters
+    ):
+        query = select(self.model).filter_by(**filters).filter(
+            self.model.date.between(date_from, date_to)
+        )
+        res = await self.session.execute(query)
+        return res.scalars().all()

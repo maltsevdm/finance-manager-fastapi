@@ -16,6 +16,10 @@ class UserRead(schemas.BaseUser[int]):
         from_attributes = True
 
 
+class UserUpdate(schemas.BaseUserUpdate):
+    pass
+
+
 class UserCreate(schemas.BaseUserCreate):
     username: str
     email: str

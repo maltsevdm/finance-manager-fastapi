@@ -1,4 +1,7 @@
-from src.schemas.transactions import TransactionAdd, TransactionUpdate
+import datetime
+
+from src.schemas.transactions import TransactionAdd, TransactionUpdate, \
+    TransactionRead
 from src.utils.enum_classes import CategoryGroup, TransactionGroup
 from src.utils.unit_of_work import IUnitOfWork
 
@@ -24,7 +27,7 @@ class TransactionsService:
 
             await uow.commit()
 
-            return db_transaction.to_read_model()
+            return db_transaction
 
     async def remove_one(self, uow: IUnitOfWork, id: int, user_id: int):
         async with uow:
@@ -133,3 +136,11 @@ class TransactionsService:
             return TransactionGroup.income
         else:
             raise ValueError('The wrong direction of the transaction')
+
+    async def get_all(self, uow: IUnitOfWork, **filters):
+        async with uow:
+            transactions = await uow.transactions.find_all_between_dates(
+                **filters)
+
+            return [TransactionRead.model_validate(x, from_attributes=True)
+                    for x in transactions]

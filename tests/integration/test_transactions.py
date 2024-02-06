@@ -22,6 +22,7 @@ class __TestTransactions:
     async def test_add_transaction(
             self, ac: AsyncClient, token, id_from, id_to, group, amount,
             status_code, category_from_amount, category_to_amount
+
     ):
         response = await ac.post(
             '/api/transactions',

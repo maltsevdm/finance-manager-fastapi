@@ -70,14 +70,11 @@ async def get_transactions(
         uow: UOWDep,
         id: int | None = None,
         date_from: datetime.date = utils.get_start_month_date(),
-        date_to: datetime.date = utils.get_end_month_date()
-):
-    ...
-
-@router.get('/{date_from}-{date_to}')
-async def get_amount_group_for_month(
-        date_from: datetime.date,
-        date_to: datetime.date,
+        date_to: datetime.date = utils.get_end_month_date(),
         user: User = Depends(current_active_user),
 ):
-    return await core.get_transactions_by_group(db, user.id, group)
+    filters = {'date_from': date_from, 'date_to': date_to}
+    if id is not None:
+        filters['id'] = id
+    res = await TransactionsService().get_all(uow, user_id=user.id, **filters)
+    return res
