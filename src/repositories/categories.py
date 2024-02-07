@@ -41,18 +41,19 @@ class CategoriesRepository(SQLAlchemyRepository):
     async def edit_one(self, data: dict, **filters):
         db_category = await self.find_one(**filters)
 
-        if data['name'] is not None:
-            db_category.name = data['name']
-        if data['icon'] is not None:
-            db_category.icon = data['icon']
-        if data['amount'] is not None:
-            db_category.amount = data['amount']
-        if data['position'] is not None:
-            if db_category.position != data['position']:
-                await self.update_positions(
-                    db_category.user_id, db_category.group, data['position'],
-                    db_category.position)
-            db_category.position = data['position']
+        for attr, value in data:
+            if value is None:
+                continue
+
+            if attr == 'position':
+                if db_category.position != value:
+                    await self.update_positions(
+                        db_category.user_id, db_category.group,
+                        value, db_category.position)
+                    db_category.position = value
+                continue
+
+            setattr(db_category, attr, value)
 
         return db_category
 
