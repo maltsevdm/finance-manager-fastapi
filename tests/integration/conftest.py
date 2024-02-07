@@ -6,7 +6,7 @@ import pytest
 from httpx import AsyncClient
 from fastapi.testclient import TestClient
 
-from main import app
+from src.main import app
 from src.config import settings
 from src.db.database import engine
 from src import Base

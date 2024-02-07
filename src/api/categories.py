@@ -10,7 +10,7 @@ from src.schemas.categories import CategoryAdd, CategoryUpdate, CategoryRead
 from src.utils.enum_classes import CategoryGroup
 from src.services.categories import CategoriesService
 
-router = APIRouter(prefix='/categories', tags=['Category'])
+router = APIRouter(prefix='/categories', tags=['category'])
 
 
 @router.post('/', response_model=CategoryRead)
