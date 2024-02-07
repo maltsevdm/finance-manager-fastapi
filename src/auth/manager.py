@@ -7,7 +7,7 @@ from fastapi_users.authentication import CookieTransport, JWTStrategy, Authentic
 from src.db import core
 from src.db.models import User
 from src.db.core import get_user_db
-from src.auth import schemas
+from src.schemas.users import UserCreate
 
 SECRET = 'SECRET'
 
@@ -17,7 +17,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
     verification_token_secret = SECRET
 
     async def create(
-            self, user_create: schemas.UserCreate, safe: bool = False, request: Optional[Request] = None,
+            self, user_create: UserCreate, safe: bool = False, request: Optional[Request] = None,
     ):
         await self.validate_password(user_create.password, user_create)
 
