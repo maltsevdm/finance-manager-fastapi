@@ -1,78 +1,58 @@
 import datetime
-from typing import Optional
+from typing import Annotated
 
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
-from sqlalchemy import (Boolean, Column, ForeignKey, Integer, String, TIMESTAMP,
-                        Index, Float, text)
+from sqlalchemy import Column, ForeignKey, TIMESTAMP, Index, text, \
+    CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.database import Base
-from src.utils import utils
-from src.utils.enum_classes import CategoryGroup, TransactionGroup
+from src.utils.enum_classes import CategoryGroup, TransactionGroup, BankGroup
+
+intpk = Annotated[int, mapped_column(primary_key=True)]
 
 
 class User(SQLAlchemyBaseUserTable[int], Base):
-    id = Column(Integer, primary_key=True)
-    email = Column(String, nullable=False)
-    username = Column(String, nullable=False)
-    registered_at = Column(TIMESTAMP, default=datetime.datetime.utcnow)
-    hashed_password: str = Column(String(length=1024), nullable=False)
-    is_active: bool = Column(Boolean, default=True, nullable=False)
-    is_superuser: bool = Column(Boolean, default=False, nullable=False)
-    is_verified: bool = Column(Boolean, default=False, nullable=False)
+    id: Mapped[intpk]
+    email: Mapped[str]
+    username: Mapped[str]
+    registered_at: Mapped[datetime.datetime] = mapped_column(
+        default=datetime.datetime.utcnow)
+    hashed_password: Mapped[str]
+    is_active: Mapped[bool] = mapped_column(default=True)
+    is_superuser: Mapped[bool] = mapped_column(default=False)
+    is_verified: Mapped[bool] = mapped_column(default=False)
 
 
 class Category(Base):
     __tablename__ = 'category'
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[intpk]
     user_id: Mapped[int] = mapped_column(
         ForeignKey('user.id', ondelete='CASCADE'))
     name: Mapped[str]
     group: Mapped[CategoryGroup]
     icon: Mapped[str | None]
     position: Mapped[int]
-    amount: Mapped[float] = mapped_column(server_default=text('0'))
+    bank_group: Mapped[BankGroup | None]
+    amount: Mapped[float | None]
+    card_balance: Mapped[float | None]
+    credit_card_limit: Mapped[float | None]
 
     __table_args__ = (
         Index('user_group_name_index', 'user_id', 'name', 'group', unique=True),
+        CheckConstraint('credit_card_limit >= 0', name='check_credit_card_limit'),
+        CheckConstraint('position >= 0', name='check_position'),
+        CheckConstraint('card_balance >= 0', name='check_card_balance'),
     )
 
     repr_cols_num = 7
 
 
-class CategoryAmount(Base):
-    __tablename__ = 'category_amount'
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    category_id: Mapped[int] = mapped_column(
-        ForeignKey('category.id', ondelete='CASCADE'),
-        nullable=False)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey('user.id', ondelete='CASCADE'),
-        nullable=False)
-    group: Mapped[CategoryGroup] = mapped_column(nullable=False)
-    date: Mapped[datetime.date] = mapped_column(
-        nullable=False, default=utils.get_start_month_date())
-    amount: Mapped[float] = mapped_column(nullable=False, default=0)
-
-    repr_cols_num = 6
-
-
-class Balance(Base):
-    __tablename__ = 'balance'
-
-    user_id = Column(
-        Integer, ForeignKey('user.id'), primary_key=True, nullable=False)
-    balance = Column(Integer, nullable=False, default=0)
-    date: Mapped[datetime.date] = mapped_column(
-        nullable=False, default=utils.get_start_month_date())
-
-
 class Transaction(Base):
     __tablename__ = 'transaction'
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[intpk]
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'))
     group: Mapped[TransactionGroup]
     id_category_from: Mapped[int] = mapped_column(
@@ -84,3 +64,21 @@ class Transaction(Base):
     note: Mapped[str | None]
 
     repr_cols_num = 8
+
+
+class Debt(Base):
+    __tablename__ = 'debts'
+
+    id: Mapped[intpk]
+    user_id: Mapped[int] = mapped_column(ForeignKey('user.id'))
+    bank_id: Mapped[int] = mapped_column(ForeignKey('category.id',
+                                                    ondelete='CASCADE'))
+    amount: Mapped[float]
+    deadline: Mapped[datetime.date | None]
+    notification: Mapped[bool]
+    note: Mapped[str | None]
+
+    __table_args__ = (
+        CheckConstraint('amount >= 0', name='check_amount'),
+    )
+

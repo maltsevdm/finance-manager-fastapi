@@ -2,12 +2,14 @@ from abc import ABC, abstractmethod
 
 from src.db.database import async_session
 from src.repositories.categories import CategoriesRepository
+from src.repositories.debts import DebtsRepository
 from src.repositories.transations import TransactionsRepository
 
 
 class IUnitOfWork(ABC):
     categories: CategoriesRepository
     transactions: TransactionsRepository
+    debts: DebtsRepository
 
     @abstractmethod
     def __init__(self):
@@ -39,6 +41,7 @@ class UnitOfWork:
 
         self.categories = CategoriesRepository(self.session)
         self.transactions = TransactionsRepository(self.session)
+        self.debts = DebtsRepository(self.session)
 
     async def __aexit__(self, *args):
         await self.rollback()
