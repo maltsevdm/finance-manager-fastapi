@@ -41,7 +41,7 @@ class CategoriesRepository(SQLAlchemyRepository):
     async def edit_one(self, data: dict, **filters):
         db_category = await self.find_one(**filters)
 
-        for attr, value in data:
+        for attr, value in data.items():
             if value is None:
                 continue
 
