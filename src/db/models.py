@@ -2,8 +2,7 @@ import datetime
 from typing import Annotated
 
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
-from sqlalchemy import Column, ForeignKey, TIMESTAMP, Index, text, \
-    CheckConstraint
+from sqlalchemy import ForeignKey, Index, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.database import Base
