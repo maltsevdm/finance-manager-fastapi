@@ -25,7 +25,7 @@ class User(SQLAlchemyBaseUserTable[int], Base):
 
 
 class Category(Base):
-    __tablename__ = 'category'
+    __tablename__ = 'categories'
 
     id: Mapped[intpk]
     user_id: Mapped[int] = mapped_column(
@@ -50,15 +50,15 @@ class Category(Base):
 
 
 class Transaction(Base):
-    __tablename__ = 'transaction'
+    __tablename__ = 'transactions'
 
     id: Mapped[intpk]
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'))
     group: Mapped[TransactionGroup]
     id_category_from: Mapped[int] = mapped_column(
-        ForeignKey('category.id', ondelete='CASCADE'))
+        ForeignKey('categories.id', ondelete='CASCADE'))
     id_category_to: Mapped[int] = mapped_column(
-        ForeignKey('category.id', ondelete='CASCADE'))
+        ForeignKey('categories.id', ondelete='CASCADE'))
     amount: Mapped[float]
     date: Mapped[datetime.date]
     note: Mapped[str | None]
@@ -71,7 +71,7 @@ class Debt(Base):
 
     id: Mapped[intpk]
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'))
-    bank_id: Mapped[int] = mapped_column(ForeignKey('category.id',
+    bank_id: Mapped[int] = mapped_column(ForeignKey('categories.id',
                                                     ondelete='CASCADE'))
     amount: Mapped[float]
     deadline: Mapped[datetime.date | None]
