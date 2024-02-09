@@ -51,16 +51,16 @@ class DebtsService:
             db_bank_old = await uow.categories.find_one(
                 id=id_bank_old, user_id=user_id,
                 group=CategoryGroup.bank)
-            db_bank_old.card_balance += amount_old
+            db_bank_old.credit_card_balance += amount_old
             if id_bank_new is None and amount_new is not None:
-                db_bank_old.card_balance -= amount_new
+                db_bank_old.credit_card_balance -= amount_new
 
         if id_bank_new is not None:
             db_bank_new = await uow.categories.find_one(
                 id=id_bank_new, user_id=user_id,
                 group=CategoryGroup.bank)
 
-            db_bank_new.card_balance -= amount_old if amount_new is None else amount_new
+            db_bank_new.credit_card_balance -= amount_old if amount_new is None else amount_new
 
     async def update_one(
             self, uow: IUnitOfWork, id: int, user_id: int, debt: DebtUpdate

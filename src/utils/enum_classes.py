@@ -1,6 +1,15 @@
 import enum
 
 
+class ExpenseIncomeGroup(enum.Enum):
+    income = 'income'
+    expense = 'expense'
+
+
+class BankGroup(enum.Enum):
+    bank = 'bank'
+
+
 class CategoryGroup(enum.Enum):
     income = 'income'
     expense = 'expense'
@@ -13,7 +22,11 @@ class TransactionGroup(enum.Enum):
     transfer = 'transfer'
 
 
-class BankGroup(enum.Enum):
+class BankKindGroup(enum.Enum):
     cash = 'cash'
     debit_card = 'debit_card'
     credit_card = 'credit_card'
+
+
+if __name__ == '__main__':
+    print(CategoryGroup.income)

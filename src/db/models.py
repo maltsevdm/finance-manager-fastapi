@@ -6,7 +6,7 @@ from sqlalchemy import ForeignKey, Index, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.database import Base
-from src.utils.enum_classes import CategoryGroup, TransactionGroup, BankGroup
+from src.utils.enum_classes import CategoryGroup, TransactionGroup, BankKindGroup
 
 intpk = Annotated[int, mapped_column(primary_key=True)]
 
@@ -33,16 +33,16 @@ class Category(Base):
     group: Mapped[CategoryGroup]
     icon: Mapped[str | None]
     position: Mapped[int]
-    bank_group: Mapped[BankGroup | None]
+    bank_group: Mapped[BankKindGroup | None]
     amount: Mapped[float | None]
-    card_balance: Mapped[float | None]
+    credit_card_balance: Mapped[float | None]
     credit_card_limit: Mapped[float | None]
 
     __table_args__ = (
         Index('user_group_name_index', 'user_id', 'name', 'group', unique=True),
         CheckConstraint('credit_card_limit >= 0', name='check_credit_card_limit'),
         CheckConstraint('position >= 0', name='check_position'),
-        CheckConstraint('card_balance >= 0', name='check_card_balance'),
+        CheckConstraint('credit_card_balance >= 0', name='check_credit_card_balance'),
     )
 
     repr_cols_num = 7
