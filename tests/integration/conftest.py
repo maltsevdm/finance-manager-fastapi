@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from src.main import app
 from src.config import settings
 from src.db.database import engine
-from src import Base
+from src.db.database import Base
 
 if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
