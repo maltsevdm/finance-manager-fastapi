@@ -20,21 +20,17 @@ class BankAdd(CategoryAdd):
 
     @model_validator(mode='after')
     def check_bank_group(self):
-        if self.bank_group == BankKindGroup.credit_card:
-            if self.credit_card_limit is None:
-                raise ValueError('missing required field - credit_card_limit')
-            if self.credit_card_balance is None:
-                raise ValueError('missing required field - credit_card_balance')
+        attrs_to_check = ['credit_card_limit', 'credit_card_balance']
 
+        if self.bank_group == BankKindGroup.credit_card:
+            for attr in attrs_to_check:
+                if getattr(self, attr) is None:
+                    raise ValueError(f'missing required field - {attr}')
         else:
-            if self.credit_card_limit is not None:
-                raise ValueError(
-                    f'when bank is {self.bank_group.value}, credit card limit '
-                    f'must be null')
-            if self.credit_card_balance is not None:
-                raise ValueError(
-                    f'when bank is {self.bank_group.value}, credit card balance'
-                    f' must be null')
+            for attr in attrs_to_check:
+                if getattr(self, attr) is not None:
+                    raise ValueError(f'when bank is {self.bank_group.value}, '
+                                     f'{attr} must be null')
         return self
 
 
@@ -59,3 +55,7 @@ class CategoryUpdate(BaseModel):
     amount: float | int | None = None
     credit_card_limit: float | None = None
     bank_balance: float | None = None
+
+
+if __name__ == '__main__':
+    BankAdd(name='cash', bank_group='cash', amount=0)
