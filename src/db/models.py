@@ -37,12 +37,14 @@ class Category(Base):
     amount: Mapped[float | None]
     credit_card_balance: Mapped[float | None]
     credit_card_limit: Mapped[float | None]
+    monthly_limit: Mapped[float | None]
 
     __table_args__ = (
         Index('user_group_name_index', 'user_id', 'name', 'group', unique=True),
         CheckConstraint('credit_card_limit >= 0', name='check_credit_card_limit'),
         CheckConstraint('position >= 0', name='check_position'),
         CheckConstraint('credit_card_balance >= 0', name='check_credit_card_balance'),
+        CheckConstraint('monthly_limit >= 0', name='check_monthly_limit'),
     )
 
     repr_cols_num = 7

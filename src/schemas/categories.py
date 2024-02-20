@@ -9,7 +9,7 @@ class CategoryAdd(BaseModel):
 
 
 class ExpenseIncomeAdd(CategoryAdd):
-    ...
+    monthly_limit: float | None = None
 
 
 class BankAdd(CategoryAdd):
@@ -55,6 +55,7 @@ class CategoryUpdate(BaseModel):
     amount: float | int | None = None
     credit_card_limit: float | None = None
     bank_balance: float | None = None
+    monthly_limit: float | None = None
 
 
 if __name__ == '__main__':
