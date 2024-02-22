@@ -2,7 +2,7 @@ from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.schemas.categories import CategoryAdd
+from src.schemas.categories import ExpenseIncomeAdd
 import src.schemas.transactions
 import src.utils.enum_classes
 from src.db import models
@@ -57,7 +57,7 @@ async def prepare_db_for_user(user_id: int):
             for name, group, icon, amount, position in user_categories:
                 await add_category(
                     db, user_id,
-                    src.schemas.categories.CategoryAdd(
+                    src.schemas.categories.ExpenseIncomeAdd(
                         name=name, group=group, icon=icon,
                         amount=amount if group == CategoryGroup.bank else 0,
                         position=position

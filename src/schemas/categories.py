@@ -13,7 +13,7 @@ class ExpenseIncomeAdd(CategoryAdd):
 
 
 class BankAdd(CategoryAdd):
-    bank_group: BankKindGroup
+    group: BankKindGroup
     amount: float
     credit_card_limit: float | None = None
     credit_card_balance: float | None = None
@@ -22,26 +22,25 @@ class BankAdd(CategoryAdd):
     def check_bank_group(self):
         attrs_to_check = ['credit_card_limit', 'credit_card_balance']
 
-        if self.bank_group == BankKindGroup.credit_card:
+        if self.group == BankKindGroup.credit_card:
             for attr in attrs_to_check:
                 if getattr(self, attr) is None:
                     raise ValueError(f'missing required field - {attr}')
         else:
             for attr in attrs_to_check:
                 if getattr(self, attr) is not None:
-                    raise ValueError(f'when bank is {self.bank_group.value}, '
+                    raise ValueError(f'when bank is {self.group.value}, '
                                      f'{attr} must be null')
         return self
 
 
 class CategoryRead(BaseModel):
     id: int
-    group: CategoryGroup
     position: int
 
 
 class ExpenseIncomeRead(CategoryRead, ExpenseIncomeAdd):
-    ...
+    group: CategoryGroup
 
 
 class BankRead(CategoryRead, BankAdd):

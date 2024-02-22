@@ -84,6 +84,11 @@ class TransactionsService:
             await uow.commit()
             return db_transaction.to_read_model()
 
+    async def calc_sum(self, uow: IUnitOfWork, user_id: int,
+                       **filters) -> float:
+        async with uow:
+            return await uow.transactions.calc_sum(user_id=user_id, **filters)
+
     async def _update_categories_amount(
             self, uow: IUnitOfWork, id_category_from: int, id_category_to: int,
             action: str, amount: float, user_id: int

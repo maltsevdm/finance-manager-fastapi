@@ -1,38 +1,38 @@
 from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.models import Category
-from src.utils.enum_classes import CategoryGroup
 from src.utils.repository import SQLAlchemyRepository
 
 
 class CategoriesRepository(SQLAlchemyRepository):
-    model = Category
+    position_criteria: list
 
-    async def define_position(self, user_id: int, group: CategoryGroup):
-        query = (select(func.max(self.model.position))
-                 .filter_by(user_id=user_id, group=group))
-        position = (await self.session.execute(query)).scalars().one()
+    async def add_one(self, data: dict):
+        position_filter = {c: data[c] for c in self.position_criteria}
+        data['position'] = await self._define_position(**position_filter)
+        return await super().add_one(data)
+
+    async def _define_position(self, **filters):
+        query = select(func.max(self.model.position)).filter_by(**filters)
+        position: int = (await self.session.execute(query)).scalars().one()
         return position + 1 if position else 1
 
-    async def update_positions(
-            self, user_id: int, group: CategoryGroup,
-            new_position: int, old_position: int
+    async def _update_positions(
+            self, new_position: int, old_position: int, **filters
     ):
         if old_position > new_position:
             query = (select(self.model)
-                     .filter(self.model.user_id == user_id,
-                             self.model.group == group,
-                             self.model.position < old_position,
+                     .filter(self.model.position < old_position,
                              self.model.position >= new_position))
+            query = query.filter_by(**filters)
             categories = (await self.session.execute(query)).scalars().all()
             for category in categories:
                 category.position += 1
         else:
             query = (select(self.model)
-                     .filter(self.model.user_id == user_id,
-                             self.model.group == group,
-                             self.model.position > old_position,
+                     .filter(self.model.position > old_position,
                              self.model.position <= new_position))
+            query = query.filter_by(**filters)
             categories = (await self.session.execute(query)).scalars().all()
             for category in categories:
                 category.position -= 1
@@ -47,15 +47,26 @@ class CategoriesRepository(SQLAlchemyRepository):
 
             if attr == 'position':
                 if db_category.position != value:
-                    await self.update_positions(
+                    position_filter = {c: getattr(db_category, c)
+                                       for c in self.position_criteria}
+                    await self._update_positions(
                         db_category.user_id, db_category.group,
-                        value, db_category.position)
+                        **position_filter)
                     db_category.position = value
                 continue
 
             setattr(db_category, attr, value)
 
         return db_category
+
+    async def drop_one(self, **filters):
+        db_category = await super().drop_one(**filters)
+        position_filter = {c: getattr(db_category, c)
+                           for c in self.position_criteria}
+        await self._update_positions(
+            new_position=1000, old_position=db_category.position,
+            **position_filter
+        )
 
     async def calc_sum(self, **filters):
         query = select(func.sum(self.model.amount)).filter_by(**filters)

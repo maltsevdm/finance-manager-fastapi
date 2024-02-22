@@ -24,8 +24,8 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     is_verified: Mapped[bool] = mapped_column(default=False)
 
 
-class Category(Base):
-    __tablename__ = 'categories'
+class ExpenseIncomeCategory(Base):
+    __tablename__ = 'expense_income_categories'
 
     id: Mapped[intpk]
     user_id: Mapped[int] = mapped_column(
@@ -34,47 +34,41 @@ class Category(Base):
     group: Mapped[CategoryGroup]  # bank | expense | income
     icon: Mapped[str | None]
     position: Mapped[int]
+    monthly_limit: Mapped[float | None]
 
     __table_args__ = (
-        Index('user_group_name_index', 'user_id', 'name', 'group', unique=True),
-        CheckConstraint('position >= 0', name='categories_check_position'),
+        Index('ei_cat_user_group_name_index', 'user_id', 'name', 'group',
+              unique=True),
+        CheckConstraint('monthly_limit >= 0', name='check_monthly_limit'),
     )
 
     repr_cols_num = 7
 
 
-class ExpenseIncomeCategory(Base):
-    __tablename__ = 'expense_income_categories'
-
-    id: Mapped[int] = mapped_column(
-        ForeignKey('categories.id', ondelete='CASCADE'), primary_key=True)
-    monthly_limit: Mapped[float | None]
-
-    __table_args__ = (
-        CheckConstraint('monthly_limit >= 0', name='check_monthly_limit'),
-    )
-
-    repr_cols_num = 2
-
-
 class Bank(Base):
     __tablename__ = 'banks'
 
-    id: Mapped[int] = mapped_column(
-        ForeignKey('categories.id', ondelete='CASCADE'), primary_key=True)
-    bank_group: Mapped[BankKindGroup]
+    id: Mapped[intpk]
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey('user.id', ondelete='CASCADE'))
+    name: Mapped[str]
+    group: Mapped[BankKindGroup]
+    icon: Mapped[str | None]
+    position: Mapped[int]
     amount: Mapped[float]
     credit_card_balance: Mapped[float | None]
     credit_card_limit: Mapped[float | None]
 
     __table_args__ = (
+        Index('banks_user_group_name_index', 'user_id', 'name', 'group',
+              unique=True),
         CheckConstraint('credit_card_limit >= 0',
                         name='check_credit_card_limit'),
         CheckConstraint('credit_card_balance >= 0',
                         name='check_credit_card_balance'),
     )
 
-    repr_cols_num = 5
+    repr_cols_num = 7
 
 
 class Transaction(Base):

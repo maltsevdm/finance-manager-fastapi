@@ -21,13 +21,12 @@ class SQLAlchemyRepository(AbstractRepository):
         self.session = session
 
     async def add_one(self, data: dict):
-        stmt = (insert(self.model).values(**data)
-                .returning(self.model))
+        stmt = insert(self.model).values(**data).returning(self.model)
         res = await self.session.execute(stmt)
         return res.scalar_one()
 
-    async def edit_one(self, id: int, data: dict):
-        stmt = (update(self.model).values(**data).filter_by(id=id)
+    async def edit_one(self, data: dict, **filters):
+        stmt = (update(self.model).values(**data).filter_by(**filters)
                 .returning(self.model))
         res = await self.session.execute(stmt)
         return res.scalar_one()

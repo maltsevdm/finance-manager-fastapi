@@ -1,8 +1,11 @@
 from abc import ABC, abstractmethod
 
 from src.db.database import async_session
+from src.repositories.banks import BanksRepository
 from src.repositories.categories import CategoriesRepository
 from src.repositories.debts import DebtsRepository
+from src.repositories.expense_income_categories import \
+    ExpenseIncomeCategoriesRepository
 from src.repositories.transations import TransactionsRepository
 
 
@@ -10,6 +13,8 @@ class IUnitOfWork(ABC):
     categories: CategoriesRepository
     transactions: TransactionsRepository
     debts: DebtsRepository
+    ei_categories: ExpenseIncomeCategoriesRepository
+    banks: BanksRepository
 
     @abstractmethod
     def __init__(self):
@@ -40,6 +45,8 @@ class UnitOfWork:
         self.session = self.session_factory()
 
         self.categories = CategoriesRepository(self.session)
+        self.banks = BanksRepository(self.session)
+        self.ei_categories = ExpenseIncomeCategoriesRepository(self.session)
         self.transactions = TransactionsRepository(self.session)
         self.debts = DebtsRepository(self.session)
 
