@@ -6,7 +6,8 @@ from sqlalchemy import ForeignKey, Index, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.database import Base
-from src.utils.enum_classes import CategoryGroup, TransactionGroup, BankKindGroup
+from src.utils.enum_classes import CategoryGroup, TransactionGroup, \
+    BankKindGroup
 
 intpk = Annotated[int, mapped_column(primary_key=True)]
 
@@ -30,24 +31,50 @@ class Category(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey('user.id', ondelete='CASCADE'))
     name: Mapped[str]
-    group: Mapped[CategoryGroup]
+    group: Mapped[CategoryGroup]  # bank | expense | income
     icon: Mapped[str | None]
     position: Mapped[int]
-    bank_group: Mapped[BankKindGroup | None]
-    amount: Mapped[float | None]
-    credit_card_balance: Mapped[float | None]
-    credit_card_limit: Mapped[float | None]
-    monthly_limit: Mapped[float | None]
 
     __table_args__ = (
         Index('user_group_name_index', 'user_id', 'name', 'group', unique=True),
-        CheckConstraint('credit_card_limit >= 0', name='check_credit_card_limit'),
-        CheckConstraint('position >= 0', name='check_position'),
-        CheckConstraint('credit_card_balance >= 0', name='check_credit_card_balance'),
-        CheckConstraint('monthly_limit >= 0', name='check_monthly_limit'),
+        CheckConstraint('position >= 0', name='categories_check_position'),
     )
 
     repr_cols_num = 7
+
+
+class ExpenseIncomeCategory(Base):
+    __tablename__ = 'expense_income_categories'
+
+    id: Mapped[int] = mapped_column(
+        ForeignKey('categories.id', ondelete='CASCADE'), primary_key=True)
+    monthly_limit: Mapped[float | None]
+
+    __table_args__ = (
+        CheckConstraint('monthly_limit >= 0', name='check_monthly_limit'),
+    )
+
+    repr_cols_num = 2
+
+
+class Bank(Base):
+    __tablename__ = 'banks'
+
+    id: Mapped[int] = mapped_column(
+        ForeignKey('categories.id', ondelete='CASCADE'), primary_key=True)
+    bank_group: Mapped[BankKindGroup]
+    amount: Mapped[float]
+    credit_card_balance: Mapped[float | None]
+    credit_card_limit: Mapped[float | None]
+
+    __table_args__ = (
+        CheckConstraint('credit_card_limit >= 0',
+                        name='check_credit_card_limit'),
+        CheckConstraint('credit_card_balance >= 0',
+                        name='check_credit_card_balance'),
+    )
+
+    repr_cols_num = 5
 
 
 class Transaction(Base):
@@ -82,4 +109,3 @@ class Debt(Base):
     __table_args__ = (
         CheckConstraint('amount >= 0', name='check_amount'),
     )
-
