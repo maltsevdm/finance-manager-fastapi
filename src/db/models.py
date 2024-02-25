@@ -6,8 +6,8 @@ from sqlalchemy import ForeignKey, Index, CheckConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.database import Base
-from src.utils.enum_classes import CategoryGroup, TransactionGroup, \
-    BankKindGroup
+from src.utils.enum_classes import (
+    TransactionGroup, BankKindGroup, ExpenseIncomeGroup)
 
 intpk = Annotated[int, mapped_column(primary_key=True)]
 
@@ -24,14 +24,23 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     is_verified: Mapped[bool] = mapped_column(default=False)
 
 
-class ExpenseIncomeCategory(Base):
-    __tablename__ = 'expense_income_categories'
+class CategoryId(Base):
+    __tablename__ = 'categories_id'
 
     id: Mapped[intpk]
     user_id: Mapped[int] = mapped_column(
         ForeignKey('user.id', ondelete='CASCADE'))
+
+
+class ExpenseIncomeCategory(Base):
+    __tablename__ = 'expense_income_categories'
+
+    id: Mapped[int] = mapped_column(
+        ForeignKey('categories_id.id', ondelete='CASCADE'), primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey('user.id', ondelete='CASCADE'))
     name: Mapped[str]
-    group: Mapped[CategoryGroup]  # bank | expense | income
+    group: Mapped[ExpenseIncomeGroup]
     icon: Mapped[str | None]
     position: Mapped[int]
     monthly_limit: Mapped[float | None]
@@ -48,7 +57,8 @@ class ExpenseIncomeCategory(Base):
 class Bank(Base):
     __tablename__ = 'banks'
 
-    id: Mapped[intpk]
+    id: Mapped[int] = mapped_column(
+        ForeignKey('categories_id.id', ondelete='CASCADE'), primary_key=True)
     user_id: Mapped[int] = mapped_column(
         ForeignKey('user.id', ondelete='CASCADE'))
     name: Mapped[str]
@@ -77,10 +87,10 @@ class Transaction(Base):
     id: Mapped[intpk]
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'))
     group: Mapped[TransactionGroup]
-    id_category_from: Mapped[int] = mapped_column(
-        ForeignKey('categories.id', ondelete='CASCADE'))
-    id_category_to: Mapped[int] = mapped_column(
-        ForeignKey('categories.id', ondelete='CASCADE'))
+    bank_id: Mapped[int] = mapped_column(
+        ForeignKey('banks.id', ondelete='CASCADE'))
+    destination_id: Mapped[int] = mapped_column(
+        ForeignKey('categories_id.id', ondelete='CASCADE'))
     amount: Mapped[float]
     date: Mapped[datetime.date]
     note: Mapped[str | None]
@@ -93,7 +103,7 @@ class Debt(Base):
 
     id: Mapped[intpk]
     user_id: Mapped[int] = mapped_column(ForeignKey('user.id'))
-    bank_id: Mapped[int] = mapped_column(ForeignKey('categories.id',
+    bank_id: Mapped[int] = mapped_column(ForeignKey('banks.id',
                                                     ondelete='CASCADE'))
     amount: Mapped[float]
     deadline: Mapped[datetime.date | None]

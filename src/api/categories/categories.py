@@ -1,10 +1,11 @@
 from fastapi import APIRouter
 
-from src.api.banks import router as router_banks
+from src.api.categories import banks, ei
 
 router = APIRouter(prefix='/categories', include_in_schema=True)
 
-router.include_router(router_banks)
+router.include_router(banks.router)
+router.include_router(ei.router)
 
 
 # async def add_category(

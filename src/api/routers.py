@@ -1,4 +1,4 @@
-from src.api.categories import router as router_categories
+from src.api.categories.categories import router as router_categories
 from src.api.transactions import router as router_transactions
 from src.api.debts import router as router_debts
 from src.api.icons import router as router_icons

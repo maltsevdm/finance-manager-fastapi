@@ -1,6 +1,6 @@
-from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func, insert, delete
 
+from src.db.models import CategoryId
 from src.utils.repository import SQLAlchemyRepository
 
 
@@ -8,6 +8,11 @@ class CategoriesRepository(SQLAlchemyRepository):
     position_criteria: list
 
     async def add_one(self, data: dict):
+        stmt = (insert(CategoryId).values(user_id=data['user_id'])
+                .returning(CategoryId.id))
+        res = await self.session.execute(stmt)
+        data['id'] = res.scalar_one()
+
         position_filter = {c: data[c] for c in self.position_criteria}
         data['position'] = await self._define_position(**position_filter)
         return await super().add_one(data)
@@ -61,12 +66,17 @@ class CategoriesRepository(SQLAlchemyRepository):
 
     async def drop_one(self, **filters):
         db_category = await super().drop_one(**filters)
+
+        stmt = delete(CategoryId).filter_by(id=db_category.id)
+        await self.session.execute(stmt)
+
         position_filter = {c: getattr(db_category, c)
                            for c in self.position_criteria}
         await self._update_positions(
             new_position=1000, old_position=db_category.position,
             **position_filter
         )
+        return db_category
 
     async def calc_sum(self, **filters):
         query = select(func.sum(self.model.amount)).filter_by(**filters)

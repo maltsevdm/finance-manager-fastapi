@@ -39,19 +39,19 @@ class CategoriesService(ABC):
             self, uow: IUnitOfWork, id: int, user_id: int,
             category: BaseModel
     ):
-        async with uow:
-            db_category = await self.repository.edit_one(
+        async with async_session() as session:
+            db_category = await self.repository(session).edit_one(
                 id=id, user_id=user_id, data=category.model_dump())
-            await uow.commit()
+            await session.commit()
             return self.schema_read.model_validate(db_category,
                                                    from_attributes=True)
 
     async def remove_one(
             self, uow: IUnitOfWork, user_id: int, category_id: int
     ):
-        async with uow:
-            db_category = await self.repository.drop_one(
+        async with async_session() as session:
+            db_category = await self.repository(session).drop_one(
                 id=category_id, user_id=user_id)
-            await uow.commit()
+            await session.commit()
             return self.schema_read.model_validate(db_category,
                                                    from_attributes=True)

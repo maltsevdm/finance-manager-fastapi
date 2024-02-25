@@ -1,6 +1,6 @@
 from pydantic import BaseModel, model_validator
 
-from src.utils.enum_classes import CategoryGroup, BankKindGroup
+from src.utils.enum_classes import BankKindGroup, ExpenseIncomeGroup
 
 
 class CategoryAdd(BaseModel):
@@ -9,6 +9,7 @@ class CategoryAdd(BaseModel):
 
 
 class ExpenseIncomeAdd(CategoryAdd):
+    group: ExpenseIncomeGroup
     monthly_limit: float | None = None
 
 
@@ -40,7 +41,7 @@ class CategoryRead(BaseModel):
 
 
 class ExpenseIncomeRead(CategoryRead, ExpenseIncomeAdd):
-    group: CategoryGroup
+    amount: int
 
 
 class BankRead(CategoryRead, BankAdd):
