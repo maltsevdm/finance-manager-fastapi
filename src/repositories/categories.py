@@ -55,8 +55,7 @@ class CategoriesRepository(SQLAlchemyRepository):
                     position_filter = {c: getattr(db_category, c)
                                        for c in self.position_criteria}
                     await self._update_positions(
-                        db_category.user_id, db_category.group,
-                        **position_filter)
+                        value, db_category.position, **position_filter)
                     db_category.position = value
                 continue
 
