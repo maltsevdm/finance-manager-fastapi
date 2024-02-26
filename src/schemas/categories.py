@@ -52,9 +52,16 @@ class CategoryUpdate(BaseModel):
     name: str | None = None
     position: int | None = None
     icon: str | None = None
+
+
+class BankUpdate(CategoryUpdate):
     amount: float | int | None = None
     credit_card_limit: float | None = None
     bank_balance: float | None = None
+    monthly_limit: float | None = None
+
+
+class EiCategoryUpdate(CategoryUpdate):
     monthly_limit: float | None = None
 
 

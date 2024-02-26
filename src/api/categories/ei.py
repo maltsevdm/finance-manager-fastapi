@@ -7,7 +7,7 @@ from src.api.dependencies import UOWDep
 from src.auth.manager import current_active_user
 from src.db.models import User
 from src.schemas.categories import (
-    CategoryUpdate, ExpenseIncomeAdd, ExpenseIncomeRead)
+    ExpenseIncomeAdd, ExpenseIncomeRead, EiCategoryUpdate)
 from src.services.ei_categories import ExpenseIncomeService
 from src.utils.enum_classes import ExpenseIncomeGroup
 
@@ -42,7 +42,7 @@ async def get_ei_categories(
 async def patch_ei_category(
         uow: UOWDep,
         id: int,
-        category: CategoryUpdate,
+        category: EiCategoryUpdate,
         user: User = Depends(current_active_user),
 ):
     try:

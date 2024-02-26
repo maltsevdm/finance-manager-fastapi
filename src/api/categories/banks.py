@@ -6,7 +6,7 @@ from sqlalchemy.exc import NoResultFound
 from src.api.dependencies import UOWDep
 from src.auth.manager import current_active_user
 from src.db.models import User
-from src.schemas.categories import BankAdd, BankRead, CategoryUpdate
+from src.schemas.categories import BankAdd, BankRead, BankUpdate
 from src.services.banks import BanksService
 from src.utils.enum_classes import BankKindGroup
 
@@ -41,7 +41,7 @@ async def get_banks(
 async def patch_bank(
         uow: UOWDep,
         id: int,
-        bank: CategoryUpdate,
+        bank: BankUpdate,
         user: User = Depends(current_active_user),
 ):
     try:
