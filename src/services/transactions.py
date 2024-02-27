@@ -1,7 +1,8 @@
 from src.db.models import Bank, ExpenseIncomeCategory
 from src.schemas.transactions import (
     TransactionAdd, TransactionUpdate, TransactionRead)
-from src.utils.enum_classes import TransactionGroup
+from src.utils.enum_classes import TransactionGroup, ExpenseIncomeGroup, \
+    BankKindGroup
 from src.utils.unit_of_work import IUnitOfWork
 
 
@@ -31,6 +32,18 @@ class TransactionsService:
             db_bank, db_dest = await self._get_bank_and_dest(
                 uow, transaction.group, transaction.bank_id,
                 transaction.destination_id, user_id)
+
+            if (transaction.group == TransactionGroup.expense
+                    and db_dest.group != ExpenseIncomeGroup.expense):
+                raise ValueError('Неверное направление транзакции.')
+
+            if (transaction.group == TransactionGroup.income
+                    and db_dest.group != ExpenseIncomeGroup.income):
+                raise ValueError('Неверное направление транзакции.')
+
+            if (transaction.group == TransactionGroup.transfer
+                    and not isinstance(db_dest.group, BankKindGroup)):
+                raise ValueError('Неверное направление транзакции.')
 
             match transaction.group:
                 case TransactionGroup.transfer:
@@ -87,16 +100,16 @@ class TransactionsService:
                     or db_transaction.bank_id != transaction.bank_id):
                 # Если поменялось либо сумма, либо счет списания
 
-                db_bank_old = await uow.banks.find_one(
+                db_bank_old: Bank = await uow.banks.find_one(
                     id=db_transaction.bank_id, user_id=user_id)
                 if db_transaction.bank_id != transaction.bank_id:
-                    db_bank_new = await uow.banks.find_one(
+                    db_bank_new: Bank = await uow.banks.find_one(
                         id=transaction.bank_id, user_id=user_id)
                 else:
-                    db_bank_new = db_bank_old
+                    db_bank_new: Bank = db_bank_old
 
-                db_bank_old.amount += db_transaction.amount
-                db_bank_new.amount -= transaction.amount
+                db_bank_old.increase_amount(db_transaction.amount)
+                db_bank_new.decrease_amount(transaction.amount)
 
             if ((db_transaction.destination_id != transaction.destination_id
                  or db_transaction.amount != transaction.amount)
@@ -104,17 +117,17 @@ class TransactionsService:
                 # Если поменялось либо сумма, либо счет назначения,
                 # и если это перевод
 
-                db_dest_old = await uow.banks.find_one(
+                db_dest_old: Bank = await uow.banks.find_one(
                     id=db_transaction.destination_id, user_id=user_id)
 
                 if db_transaction.destination_id != transaction.destination_id:
-                    db_dest_new = await uow.banks.find_one(
+                    db_dest_new: Bank = await uow.banks.find_one(
                         id=transaction.destination_id, user_id=user_id)
                 else:
-                    db_dest_new = db_dest_old
+                    db_dest_new: Bank = db_dest_old
 
-                db_dest_old.amount -= db_transaction.amount
-                db_dest_new.amount += transaction.amount
+                db_dest_old.decrease_amount(db_transaction.amount)
+                db_dest_new.increase_amount(transaction.amount)
 
             db_transaction = await uow.transactions.edit_one(
                 db_transaction.id, **transaction_dict
@@ -128,10 +141,12 @@ class TransactionsService:
         async with uow:
             return await uow.transactions.calc_sum(user_id=user_id, **filters)
 
-    async def get_all(self, uow: IUnitOfWork, **filters):
+    async def get_all(
+            self, uow: IUnitOfWork, limit: int, offset: int, **filters
+    ):
         async with uow:
             transactions = await uow.transactions.find_all_between_dates(
-                **filters)
+                limit=limit, offset=offset, **filters)
 
             return [TransactionRead.model_validate(x, from_attributes=True)
                     for x in transactions]

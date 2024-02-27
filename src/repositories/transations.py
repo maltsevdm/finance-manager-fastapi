@@ -26,10 +26,11 @@ class TransactionsRepository(SQLAlchemyRepository):
         return result if result else 0
 
     async def find_all_between_dates(
-            self, date_from: datetime.date, date_to: datetime.date, **filters
+            self, date_from: datetime.date, date_to: datetime.date,
+            limit: int, offset: int, **filters
     ):
-        query = select(self.model).filter_by(**filters).filter(
-            self.model.date.between(date_from, date_to)
-        )
+        query = (select(self.model).filter_by(**filters)
+                 .filter(self.model.date.between(date_from, date_to))
+                 .limit(limit).offset(offset))
         res = await self.session.execute(query)
         return res.scalars().all()
