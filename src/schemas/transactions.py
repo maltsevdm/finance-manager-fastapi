@@ -7,22 +7,22 @@ from src.utils.enum_classes import TransactionGroup
 
 
 class TransactionAdd(BaseModel):
-    id_category_from: int
-    id_category_to: int
+    group: TransactionGroup
+    bank_id: int
+    destination_id: int
     amount: float
     date: datetime.date = datetime.date.today()
-    note: str = ''
+    note: str | None
 
 
 class TransactionRead(TransactionAdd):
     id: int
     user_id: int
-    group: TransactionGroup
 
 
 class TransactionUpdate(BaseModel):
-    id_category_from: Optional[int] = None
-    id_category_to: Optional[int] = None
+    bank_id: Optional[int] = None
+    destination_id: Optional[int] = None
     amount: Optional[float] = None
     date: Optional[datetime.date] = None
     note: Optional[str] = None
