@@ -12,7 +12,7 @@ class TransactionAdd(BaseModel):
     destination_id: int
     amount: float
     date: datetime.date = datetime.date.today()
-    note: str | None
+    note: str | None = None
 
 
 class TransactionRead(TransactionAdd):
