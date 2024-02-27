@@ -80,6 +80,16 @@ class Bank(Base):
 
     repr_cols_num = 7
 
+    def increase_amount(self, value: float) -> None:
+        self.amount += value
+        if self.group == BankKindGroup.credit_card:
+            self.credit_card_balance += value
+
+    def decrease_amount(self, value: float) -> None:
+        self.amount -= value
+        if self.group == BankKindGroup.credit_card:
+            self.credit_card_balance -= value
+
 
 class Transaction(Base):
     __tablename__ = 'transactions'
