@@ -1,8 +1,16 @@
-from src.db.models import Bank, ExpenseIncomeCategory
+import asyncio
+import datetime
+import sys
+
+from sqlalchemy import select, desc
+from sqlalchemy.orm import aliased
+
+from src.db.database import async_session
+from src.db.models import Bank, ExpenseIncomeCategory, Transaction
 from src.schemas.transactions import (
-    TransactionAdd, TransactionUpdate, TransactionRead)
-from src.utils.enum_classes import TransactionGroup, ExpenseIncomeGroup, \
-    BankKindGroup
+    TransactionAdd, TransactionUpdate, TransactionPrettyRead)
+from src.utils.enum_classes import (
+    TransactionGroup, ExpenseIncomeGroup, BankKindGroup)
 from src.utils.unit_of_work import IUnitOfWork
 
 
@@ -142,11 +150,94 @@ class TransactionsService:
             return await uow.transactions.calc_sum(user_id=user_id, **filters)
 
     async def get_all(
-            self, uow: IUnitOfWork, limit: int, offset: int, **filters
+            self, uow: IUnitOfWork,
+            user_id: int,
+            limit: int | None = None,
+            offset: int | None = None,
+            group: TransactionGroup | None = None,
+            date_from: datetime.date | None = None,
+            date_to: datetime.date | None = None,
+            **filters
     ):
         async with uow:
-            transactions = await uow.transactions.find_all_between_dates(
-                limit=limit, offset=offset, **filters)
+            t = aliased(uow.transactions.model)
+            b = aliased(uow.banks.model)
+            eic = aliased(uow.ei_categories.model)
 
-            return [TransactionRead.model_validate(x, from_attributes=True)
-                    for x in transactions]
+            cte = select(b.id, b.name).union_all(select(eic.id, eic.name)).cte()
+            cte2 = aliased(cte)
+
+            query = (
+                select(
+                    t.id,
+                    t.group,
+                    cte.c.name.label('bank_name'),
+                    cte2.c.name.label('destination_name'),
+                    t.amount,
+                    t.date,
+                    t.note
+                )
+                .join(cte, t.bank_id == cte.c.id)
+                .join(cte2, t.destination_id == cte2.c.id)
+                .filter(t.user_id == user_id)
+            )
+
+            if date_from:
+                query = query.filter(t.date >= date_from)
+            if date_to:
+                query = query.filter(t.date <= date_to)
+            if group:
+                query = query.filter(t.group == group)
+
+            query = query.order_by(desc(t.date))
+
+            if offset is not None:
+                query = query.offset(offset)
+            if limit is not None:
+                query = query.limit(limit)
+
+            res = await uow.session.execute(query)
+            transactions = res.all()
+
+            return [
+                TransactionPrettyRead.model_validate(x, from_attributes=True)
+                for x in transactions]
+
+    async def test_get_all(self):
+        t = aliased(Transaction)
+        b = aliased(Bank)
+        eic = aliased(ExpenseIncomeCategory)
+
+        cte = select(b.id, b.name).union_all(select(eic.id, eic.name)).cte()
+        cte2 = aliased(cte)
+
+        query = (
+            select(
+                t.id,
+                t.group,
+                cte.c.name.label('bank_name'),
+                cte2.c.name.label('destination_name'),
+                t.amount,
+                t.date,
+                t.note
+            )
+            .join(cte, t.bank_id == cte.c.id)
+            .join(cte2, t.destination_id == cte2.c.id)
+            .filter(t.user_id == 11)
+        )
+        print(query)
+
+        async with async_session() as session:
+            res = await session.execute(query)
+
+            for row in res:
+                print(TransactionPrettyRead.model_validate(row,
+                                                           from_attributes=True))
+            #     print(row)
+
+
+if __name__ == '__main__':
+    if sys.platform == 'win32':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+    asyncio.run(TransactionsService().test_get_all())

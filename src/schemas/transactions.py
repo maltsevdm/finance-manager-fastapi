@@ -20,6 +20,16 @@ class TransactionRead(TransactionAdd):
     user_id: int
 
 
+class TransactionPrettyRead(BaseModel):
+    id: int
+    group: TransactionGroup
+    bank_name: str
+    destination_name: str
+    amount: float
+    date: datetime.date
+    note: str | None
+
+
 class TransactionUpdate(BaseModel):
     bank_id: Optional[int] = None
     destination_id: Optional[int] = None

@@ -1,5 +1,4 @@
 import datetime
-from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import NoResultFound
@@ -68,13 +67,24 @@ async def update_transaction(
 @router.get('/')
 async def get_transactions(
         uow: UOWDep,
+        offset: int = 0,
+        limit: int = 100,
         id: int | None = None,
         group: TransactionGroup | None = None,
         date_from: datetime.date = utils.get_start_month_date(),
         date_to: datetime.date = utils.get_end_month_date(),
-        offset: int = 0, limit: int = 100,
         user: User = Depends(current_active_user),
 ):
+    if offset < 0:
+        raise HTTPException(
+            status_code=422,
+            detail='OFFSET не может быть отрицательным'
+        )
+    if limit < 0:
+        raise HTTPException(
+            status_code=422,
+            detail='LIMIT не может быть отрицательным'
+        )
     filters = {'date_from': date_from, 'date_to': date_to}
     if id is not None:
         filters['id'] = id
