@@ -41,7 +41,7 @@ class CategoryRead(BaseModel):
 
 
 class ExpenseIncomeRead(CategoryRead, ExpenseIncomeAdd):
-    amount: int
+    amount: float
 
 
 class BankRead(CategoryRead, BankAdd):
@@ -55,9 +55,9 @@ class CategoryUpdate(BaseModel):
 
 
 class BankUpdate(CategoryUpdate):
-    amount: float | int | None = None
+    amount: float | None = None
     credit_card_limit: float | None = None
-    bank_balance: float | None = None
+    credit_card_balance: float | None = None
     monthly_limit: float | None = None
 
 
