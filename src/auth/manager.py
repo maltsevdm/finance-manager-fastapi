@@ -34,7 +34,7 @@ class UserManager(IntegerIDMixin, BaseUserManager[User, int]):
         user_dict['hashed_password'] = self.password_helper.hash(password)
 
         created_user = await self.user_db.create(user_dict)
-        await core.add_user_to_balance(created_user.id)
+        # await core.add_user_to_balance(created_user.id)
 
         return created_user
 
