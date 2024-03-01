@@ -71,8 +71,8 @@ async def get_transactions(
         limit: int = 100,
         id: int | None = None,
         group: TransactionGroup | None = None,
-        date_from: datetime.date = utils.get_start_month_date(),
-        date_to: datetime.date = utils.get_end_month_date(),
+        date_from: datetime.date | None = None,
+        date_to: datetime.date | None = None,
         user: User = Depends(current_active_user),
 ):
     if offset < 0:
@@ -85,7 +85,10 @@ async def get_transactions(
             status_code=422,
             detail='LIMIT не может быть отрицательным'
         )
-    filters = {'date_from': date_from, 'date_to': date_to}
+    filters = {
+        'date_from': date_from if date_from is not None else utils.get_start_month_date(),
+        'date_to': date_to if date_from is not None else utils.get_end_month_date(),
+    }
     if id is not None:
         filters['id'] = id
     if group:
@@ -101,11 +104,14 @@ async def get_sum_transaction_amounts(
         group: TransactionGroup | None = None,
         bank_id: int | None = None,
         destination_id: int | None = None,
-        date_from: datetime.date = utils.get_start_month_date(),
-        date_to: datetime.date = datetime.date.today(),
+        date_from: datetime.date | None = None,
+        date_to: datetime.date | None = None,
         user: User = Depends(current_active_user),
 ):
-    filters = {'date_from': date_from, 'date_to': date_to}
+    filters = {
+        'date_from': date_from if date_from is not None else utils.get_start_month_date(),
+        'date_to': date_to if date_from is not None else utils.get_end_month_date(),
+    }
     if group:
         filters['group'] = group
     if bank_id is not None:

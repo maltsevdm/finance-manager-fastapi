@@ -1,16 +1,15 @@
 from datetime import date, datetime, timedelta
-from typing import Union
 
 
-def get_start_month_date(
-        input_date: Union[date, datetime] = date.today()
-) -> date:
+def get_start_month_date(input_date: date | datetime | None = None) -> date:
+    if input_date is None:
+        input_date = date.today()
     return date(year=input_date.year, month=input_date.month, day=1)
 
 
-def get_end_month_date(
-        input_date: Union[date, datetime] = date.today()
-) -> date:
+def get_end_month_date(input_date: date | datetime | None = None) -> date:
+    if input_date is None:
+        input_date = date.today()
     date_start_month = get_start_month_date(input_date)
     date_start_next_month = get_start_month_date(
         date_start_month + timedelta(days=32))
