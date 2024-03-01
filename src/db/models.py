@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from src.db.database import Base
 from src.utils.enum_classes import (
-    TransactionGroup, BankKindGroup, ExpenseIncomeGroup)
+    TransactionGroup, BankKindGroup, ExpenseIncomeGroup, TransactionStatus)
 
 intpk = Annotated[int, mapped_column(primary_key=True)]
 
@@ -103,6 +103,7 @@ class Transaction(Base):
         ForeignKey('categories_id.id', ondelete='CASCADE'))
     amount: Mapped[float]
     date: Mapped[datetime.date]
+    status: Mapped[TransactionStatus]
     note: Mapped[str | None]
 
     repr_cols_num = 8

@@ -12,6 +12,7 @@ from src.repositories.expense_income_categories import (
 from src.repositories.transations import TransactionsRepository
 from src.schemas.categories import ExpenseIncomeRead, ExpenseIncomeAdd
 from src.services.categories import CategoriesService
+from src.services.transactions import TransactionsService
 from src.utils.unit_of_work import IUnitOfWork
 from src.utils.utils import get_start_month_date, get_end_month_date
 
@@ -29,6 +30,9 @@ class ExpenseIncomeService(CategoriesService):
             group=None,
             **kwargs
     ):
+        async with uow:
+            await TransactionsService().check_predict_transactions(uow, user_id)
+
         async with async_session() as session:
             t = aliased(Transaction)
             eic = aliased(ExpenseIncomeCategory)

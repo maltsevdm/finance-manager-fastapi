@@ -10,6 +10,12 @@ class BankGroup(enum.Enum):
     bank = 'bank'
 
 
+class BankKindGroup(enum.Enum):
+    cash = 'cash'
+    debit_card = 'debit_card'
+    credit_card = 'credit_card'
+
+
 class CategoryGroup(enum.Enum):
     income = 'income'
     expense = 'expense'
@@ -22,10 +28,9 @@ class TransactionGroup(enum.Enum):
     transfer = 'transfer'
 
 
-class BankKindGroup(enum.Enum):
-    cash = 'cash'
-    debit_card = 'debit_card'
-    credit_card = 'credit_card'
+class TransactionStatus(enum.Enum):
+    fact = 'fact'
+    predict = 'predict'
 
 
 if __name__ == '__main__':

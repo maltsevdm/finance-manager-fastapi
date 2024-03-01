@@ -5,12 +5,11 @@ import sys
 from sqlalchemy import select, desc
 from sqlalchemy.orm import aliased
 
-from src.db.database import async_session
-from src.db.models import Bank, ExpenseIncomeCategory, Transaction
+from src.db.models import Bank, ExpenseIncomeCategory
 from src.schemas.transactions import (
     TransactionAdd, TransactionUpdate, TransactionPrettyRead)
 from src.utils.enum_classes import (
-    TransactionGroup, ExpenseIncomeGroup, BankKindGroup)
+    TransactionGroup, ExpenseIncomeGroup, BankKindGroup, TransactionStatus)
 from src.utils.unit_of_work import IUnitOfWork
 
 
@@ -29,6 +28,32 @@ class TransactionsService:
                 id=dest_id, user_id=user_id)
 
         return db_bank, db_destination
+
+    async def check_predict_transactions(self, uow: IUnitOfWork, user_id: int):
+        model = uow.transactions.model
+        query = (select(model)
+                 .filter_by(user_id=user_id, status=TransactionStatus.predict)
+                 .filter(model.date <= datetime.date.today()))
+        res = await uow.session.execute(query)
+        transactions = res.scalars().all()
+        for transaction in transactions:
+            db_bank, db_dest = await self._get_bank_and_dest(
+                uow, transaction.group, transaction.bank_id,
+                transaction.destination_id, user_id)
+
+            match transaction.group:
+                case TransactionGroup.transfer:
+                    db_bank.decrease_amount(transaction.amount)
+                    db_dest.increase_amount(transaction.amount)
+                case TransactionGroup.expense:
+                    db_bank.decrease_amount(transaction.amount)
+                case TransactionGroup.income:
+                    db_bank.increase_amount(transaction.amount)
+
+            transaction.status = TransactionStatus.fact
+
+        if transactions:
+            await uow.commit()
 
     async def add_one(
             self,
@@ -53,17 +78,20 @@ class TransactionsService:
                     and not isinstance(db_dest.group, BankKindGroup)):
                 raise ValueError('Неверное направление транзакции.')
 
-            match transaction.group:
-                case TransactionGroup.transfer:
-                    db_bank.decrease_amount(transaction.amount)
-                    db_dest.increase_amount(transaction.amount)
-                case TransactionGroup.expense:
-                    db_bank.decrease_amount(transaction.amount)
-                case TransactionGroup.income:
-                    db_bank.increase_amount(transaction.amount)
-
             transaction_dict = transaction.model_dump()
             transaction_dict['user_id'] = user_id
+            transaction_dict['status'] = TransactionStatus.predict
+
+            if transaction.date <= datetime.date.today():
+                transaction_dict['status'] = TransactionStatus.fact
+                match transaction.group:
+                    case TransactionGroup.transfer:
+                        db_bank.decrease_amount(transaction.amount)
+                        db_dest.increase_amount(transaction.amount)
+                    case TransactionGroup.expense:
+                        db_bank.decrease_amount(transaction.amount)
+                    case TransactionGroup.income:
+                        db_bank.increase_amount(transaction.amount)
 
             db_transaction = await uow.transactions.add_one(transaction_dict)
             await uow.commit()
@@ -144,9 +172,11 @@ class TransactionsService:
             await uow.commit()
             return db_transaction.to_read_model()
 
-    async def calc_sum(self, uow: IUnitOfWork, user_id: int,
-                       **filters) -> float:
+    async def calc_sum(
+            self, uow: IUnitOfWork, user_id: int, **filters
+    ) -> float:
         async with uow:
+            await self.check_predict_transactions(uow, user_id)
             return await uow.transactions.calc_sum(user_id=user_id, **filters)
 
     async def get_all(
@@ -160,6 +190,8 @@ class TransactionsService:
             **filters
     ):
         async with uow:
+            await self.check_predict_transactions(uow, user_id)
+
             t = aliased(uow.transactions.model)
             b = aliased(uow.banks.model)
             eic = aliased(uow.ei_categories.model)
@@ -202,42 +234,3 @@ class TransactionsService:
             return [
                 TransactionPrettyRead.model_validate(x, from_attributes=True)
                 for x in transactions]
-
-    async def test_get_all(self):
-        t = aliased(Transaction)
-        b = aliased(Bank)
-        eic = aliased(ExpenseIncomeCategory)
-
-        cte = select(b.id, b.name).union_all(select(eic.id, eic.name)).cte()
-        cte2 = aliased(cte)
-
-        query = (
-            select(
-                t.id,
-                t.group,
-                cte.c.name.label('bank_name'),
-                cte2.c.name.label('destination_name'),
-                t.amount,
-                t.date,
-                t.note
-            )
-            .join(cte, t.bank_id == cte.c.id)
-            .join(cte2, t.destination_id == cte2.c.id)
-            .filter(t.user_id == 11)
-        )
-        print(query)
-
-        async with async_session() as session:
-            res = await session.execute(query)
-
-            for row in res:
-                print(TransactionPrettyRead.model_validate(row,
-                                                           from_attributes=True))
-            #     print(row)
-
-
-if __name__ == '__main__':
-    if sys.platform == 'win32':
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-    asyncio.run(TransactionsService().test_get_all())
