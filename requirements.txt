@@ -6,6 +6,7 @@ bcrypt==4.0.1
 certifi==2023.11.17
 cffi==1.16.0
 click==8.1.7
+colorama==0.4.6
 cryptography==42.0.1
 dnspython==2.4.2
 email-validator==2.0.0.post2
@@ -43,4 +44,5 @@ SQLAlchemy==2.0.21
 starlette==0.27.0
 tomli==2.0.1
 typing_extensions==4.8.0
+tzdata==2023.4
 uvicorn==0.23.2
