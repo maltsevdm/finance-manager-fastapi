@@ -1,4 +1,4 @@
-from typing import Optional
+import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import NoResultFound
@@ -25,16 +25,14 @@ async def add_ei_category(
 @router.get('/', response_model=list[ExpenseIncomeRead])
 async def get_ei_categories(
         uow: UOWDep,
-        group: Optional[ExpenseIncomeGroup] = None,
-        id: Optional[int] = None,
+        group: ExpenseIncomeGroup | None = None,
+        date_from: datetime.date | None = None,
+        date_to: datetime.date | None = None,
         user: User = Depends(current_active_user)
 ):
-    filters = {'user_id': user.id}
-    if group:
-        filters['group'] = group
-    if id is not None:
-        filters['id'] = id
-    res = await ExpenseIncomeService().get_all(uow, **filters)
+    res = await ExpenseIncomeService().get_all(
+        uow=uow, user_id=user.id, date_from=date_from, date_to=date_to,
+        group=group)
     return res
 
 

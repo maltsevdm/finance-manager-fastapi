@@ -1,6 +1,12 @@
+import datetime
+
 from pydantic import BaseModel
+from sqlalchemy import select, func
+from sqlalchemy.orm import aliased
+from sqlalchemy.sql.functions import coalesce
 
 from src.db.database import async_session
+from src.db.models import Transaction, ExpenseIncomeCategory
 from src.repositories.expense_income_categories import (
     ExpenseIncomeCategoriesRepository)
 from src.repositories.transations import TransactionsRepository
@@ -14,17 +20,50 @@ class ExpenseIncomeService(CategoriesService):
     repository = ExpenseIncomeCategoriesRepository
     schema_read = ExpenseIncomeRead
 
-    async def get_all(self, uow: IUnitOfWork, **filters):
+    async def get_all(
+            self,
+            uow: IUnitOfWork,
+            user_id: int,
+            date_from: datetime.date | None = None,
+            date_to: datetime.date | None = None,
+            group=None,
+            **kwargs
+    ):
         async with async_session() as session:
-            categories = await self.repository(session).find_all(**filters)
+            t = aliased(Transaction)
+            eic = aliased(ExpenseIncomeCategory)
+            subq = select(t.destination_id.label('id'),
+                          func.sum(t.amount).label('amount'))
 
-            for category in categories:
-                category.amount = await TransactionsRepository(
-                    session).calc_sum(
-                    date_from=get_start_month_date(),
-                    date_to=get_end_month_date(),
-                    destination_id=category.id
+            if date_from is not None:
+                subq = subq.filter(t.date >= date_from)
+
+            if date_to is not None:
+                subq = subq.filter(t.date <= date_to)
+
+            subq = (subq.filter_by(user_id=user_id).
+                    group_by(t.destination_id).subquery())
+
+            query = (
+                select(
+                    eic.id,
+                    eic.user_id,
+                    eic.name,
+                    eic.group,
+                    eic.icon,
+                    eic.position,
+                    eic.monthly_limit,
+                    coalesce(subq.c.amount, 0).label('amount')
                 )
+                .join(subq, eic.id == subq.c.id, isouter=True)
+                .filter(eic.user_id == user_id)
+            )
+
+            if group is not None:
+                query = query.filter(eic.group == group)
+
+            res = await session.execute(query)
+            categories = res.all()
 
             return [
                 self.schema_read.model_validate(category, from_attributes=True)
