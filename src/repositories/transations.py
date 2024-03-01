@@ -1,9 +1,10 @@
 import datetime
 from typing import Optional, Union
 
-from sqlalchemy import select, func, between
+from sqlalchemy import select, func
 
 from src.db.models import Transaction
+from src.utils.enum_classes import TransactionGroup
 from src.utils.repository import SQLAlchemyRepository
 
 
@@ -12,10 +13,23 @@ class TransactionsRepository(SQLAlchemyRepository):
 
     async def calc_sum(
             self,
+            id: int | None = None,
+            user_id: int | None = None,
+            bank_id: int | None = None,
+            destination_id: int | None = None,
+            group: TransactionGroup | None = None,
             date_from: Optional[datetime.date] = None,
             date_to: Optional[datetime.date] = None,
-            **filters
     ) -> Union[float, int]:
+        filters = {
+            'id': id,
+            'user_id': user_id,
+            'group': group,
+            'bank_id': bank_id,
+            'destination_id': destination_id
+        }
+        filters = dict(filter(lambda x: x[1] is not None, filters.items()))
+
         query = select(func.sum(self.model.amount)).filter_by(**filters)
         if date_from:
             query = query.filter(self.model.date >= date_from)

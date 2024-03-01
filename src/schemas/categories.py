@@ -65,5 +65,13 @@ class EiCategoryUpdate(CategoryUpdate):
     monthly_limit: float | None = None
 
 
-if __name__ == '__main__':
-    BankAdd(name='cash', bank_group='cash', amount=0)
+class CategoriesFilters(BaseModel):
+    id: int | None = None
+
+
+class BanksFilters(CategoriesFilters):
+    group: BankKindGroup | None = None
+
+
+class EiCategoriesFilters(CategoriesFilters):
+    group: ExpenseIncomeGroup | None = None

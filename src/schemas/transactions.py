@@ -36,3 +36,12 @@ class TransactionUpdate(BaseModel):
     amount: Optional[float] = None
     date: Optional[datetime.date] = None
     note: Optional[str] = None
+
+
+class TransactionsFilters(BaseModel):
+    id: int | None = None
+    group: TransactionGroup | None = None
+    bank_id: int | None = None
+    destination_id: int | None = None
+    date_from: datetime.date | None = None
+    date_to: datetime.date | None = None

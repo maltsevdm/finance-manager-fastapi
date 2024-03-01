@@ -3,11 +3,11 @@ import datetime
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import NoResultFound
 
-from src.api.dependencies import UOWDep
+from src.api.dependencies import UOWDep, get_transactions_filters
 from src.auth.manager import current_active_user
 from src.db.models import User
 from src.schemas.transactions import (
-    TransactionAdd, TransactionUpdate, TransactionRead)
+    TransactionAdd, TransactionUpdate, TransactionRead, TransactionsFilters)
 from src.services.transactions import TransactionsService
 from src.utils import utils
 from src.utils.enum_classes import TransactionGroup
@@ -101,22 +101,11 @@ async def get_transactions(
 @router.get('/sum', response_model=float)
 async def get_sum_transaction_amounts(
         uow: UOWDep,
-        group: TransactionGroup | None = None,
-        bank_id: int | None = None,
-        destination_id: int | None = None,
-        date_from: datetime.date | None = None,
-        date_to: datetime.date | None = None,
+        transactions_filters: TransactionsFilters = Depends(
+            get_transactions_filters),
         user: User = Depends(current_active_user),
 ):
-    filters = {
-        'date_from': date_from if date_from is not None else utils.get_start_month_date(),
-        'date_to': date_to if date_from is not None else utils.get_end_month_date(),
-    }
-    if group:
-        filters['group'] = group
-    if bank_id is not None:
-        filters['bank_id'] = bank_id
-    if destination_id is not None:
-        filters['destination_id'] = destination_id
-    res = await TransactionsService().calc_sum(uow, user_id=user.id, **filters)
-    return res
+    async with uow:
+        res = await uow.transactions.calc_sum(
+            user_id=user.id, **transactions_filters.model_dump())
+        return res

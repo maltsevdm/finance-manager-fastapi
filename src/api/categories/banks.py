@@ -1,12 +1,10 @@
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import NoResultFound
 
-from src.api.dependencies import UOWDep
+from src.api.dependencies import UOWDep, get_banks_filters
 from src.auth.manager import current_active_user
 from src.db.models import User
-from src.schemas.categories import BankAdd, BankRead, BankUpdate
+from src.schemas.categories import BankAdd, BankRead, BankUpdate, BanksFilters
 from src.services.banks import BanksService
 from src.utils.enum_classes import BankKindGroup
 
@@ -24,16 +22,15 @@ async def add_bank(
 @router.get('/', response_model=list[BankRead])
 async def get_banks(
         uow: UOWDep,
-        group: Optional[BankKindGroup] = None,
-        id: Optional[int] = None,
+        banks_filters: BanksFilters = Depends(get_banks_filters),
         user: User = Depends(current_active_user)
 ):
-    filters = {'user_id': user.id}
-    if group:
-        filters['group'] = group
-    if id is not None:
-        filters['id'] = id
-    res = await BanksService().get_all(uow, **filters)
+    res = await BanksService().get_all(
+        uow,
+        user_id=user.id,
+        id=banks_filters.id,
+        group=banks_filters.group
+    )
     return res
 
 
