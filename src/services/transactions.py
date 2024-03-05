@@ -103,18 +103,19 @@ class TransactionsService:
             db_transaction = await uow.transactions.drop_one(id=id,
                                                              user_id=user_id)
 
-            db_bank, db_dest = await self._get_bank_and_dest(
-                uow, db_transaction.group, db_transaction.bank_id,
-                db_transaction.destination_id, user_id)
+            if db_transaction.status == TransactionStatus.fact:
+                db_bank, db_dest = await self._get_bank_and_dest(
+                    uow, db_transaction.group, db_transaction.bank_id,
+                    db_transaction.destination_id, user_id)
 
-            match db_transaction.group:
-                case TransactionGroup.transfer:
-                    db_bank.increase_amount(db_transaction.amount)
-                    db_dest.decrease_amount(db_transaction.amount)
-                case TransactionGroup.expense:
-                    db_bank.increase_amount(db_transaction.amount)
-                case TransactionGroup.income:
-                    db_bank.decrease_amount(db_transaction.amount)
+                match db_transaction.group:
+                    case TransactionGroup.transfer:
+                        db_bank.increase_amount(db_transaction.amount)
+                        db_dest.decrease_amount(db_transaction.amount)
+                    case TransactionGroup.expense:
+                        db_bank.increase_amount(db_transaction.amount)
+                    case TransactionGroup.income:
+                        db_bank.decrease_amount(db_transaction.amount)
 
             await uow.commit()
             return db_transaction
@@ -127,50 +128,71 @@ class TransactionsService:
             user_id: int
     ):
         async with uow:
-            db_transaction = await uow.transactions.find_one(
-                id=transaction_id, user_id=user_id)
+            old_transaction_db = await self.remove_one(
+                uow, transaction_id, user_id=user_id)
 
+            old_transaction = TransactionAdd.model_validate(old_transaction_db,
+                                                            from_attributes=True)
             transaction_dict = transaction.model_dump()
+            for attr, value in transaction_dict.items():
+                if value is not None:
+                    setattr(old_transaction, attr, value)
+            db_transaction = await self.add_one(uow, user_id, old_transaction)
 
-            if (db_transaction.amount != transaction.amount
-                    or db_transaction.bank_id != transaction.bank_id):
-                # Если поменялось либо сумма, либо счет списания
+            return db_transaction
 
-                db_bank_old: Bank = await uow.banks.find_one(
-                    id=db_transaction.bank_id, user_id=user_id)
-                if db_transaction.bank_id != transaction.bank_id:
-                    db_bank_new: Bank = await uow.banks.find_one(
-                        id=transaction.bank_id, user_id=user_id)
-                else:
-                    db_bank_new: Bank = db_bank_old
-
-                db_bank_old.increase_amount(db_transaction.amount)
-                db_bank_new.decrease_amount(transaction.amount)
-
-            if ((db_transaction.destination_id != transaction.destination_id
-                 or db_transaction.amount != transaction.amount)
-                    and db_transaction.group == TransactionGroup.transfer):
-                # Если поменялось либо сумма, либо счет назначения,
-                # и если это перевод
-
-                db_dest_old: Bank = await uow.banks.find_one(
-                    id=db_transaction.destination_id, user_id=user_id)
-
-                if db_transaction.destination_id != transaction.destination_id:
-                    db_dest_new: Bank = await uow.banks.find_one(
-                        id=transaction.destination_id, user_id=user_id)
-                else:
-                    db_dest_new: Bank = db_dest_old
-
-                db_dest_old.decrease_amount(db_transaction.amount)
-                db_dest_new.increase_amount(transaction.amount)
-
-            db_transaction = await uow.transactions.edit_one(
-                db_transaction.id, **transaction_dict
-            )
-
-            await uow.commit()
-            return db_transaction.to_read_model()
+            # db_transaction = await uow.transactions.find_one(
+            #     id=transaction_id, user_id=user_id)
+            #
+            # transaction_dict = transaction.model_dump()
+            #
+            # is_amount_changed = (transaction.amount is not None
+            #                      and db_transaction.amount != transaction.amount)
+            # is_bank_changed = (transaction.bank_id is not None
+            #                    and db_transaction.bank_id != transaction.bank_id)
+            # is_dest_changed = (transaction.destination_id is not None
+            #                    and db_transaction.destination_id != transaction.destination_id)
+            #
+            # if is_amount_changed or is_bank_changed:
+            #     # Если поменялось либо сумма, либо счет списания
+            #
+            #     db_bank_old: Bank = await uow.banks.find_one(
+            #         id=db_transaction.bank_id, user_id=user_id)
+            #     if db_transaction.bank_id != transaction.bank_id:
+            #         db_bank_new: Bank = await uow.banks.find_one(
+            #             id=transaction.bank_id, user_id=user_id)
+            #     else:
+            #         db_bank_new: Bank = db_bank_old
+            #
+            #     db_bank_old.increase_amount(db_transaction.amount)
+            #     db_bank_new.decrease_amount(transaction.amount)
+            #
+            # if ((is_dest_changed or is_amount_changed)
+            #         and db_transaction.group == TransactionGroup.transfer):
+            #     # Если поменялось либо сумма, либо счет назначения,
+            #     # и если это перевод
+            #
+            #     db_dest_old: Bank = await uow.banks.find_one(
+            #         id=db_transaction.destination_id, user_id=user_id)
+            #
+            #     if db_transaction.destination_id != transaction.destination_id:
+            #         db_dest_new: Bank = await uow.banks.find_one(
+            #             id=transaction.destination_id, user_id=user_id)
+            #     else:
+            #         db_dest_new: Bank = db_dest_old
+            #
+            #     db_dest_old.decrease_amount(db_transaction.amount)
+            #     db_dest_new.increase_amount(transaction.amount)
+            #
+            # transaction_dict = {k: v for k, v in transaction_dict.items() if v is not None}
+            #
+            # db_transaction = await uow.transactions.edit_one(
+            #     id=db_transaction.id, data=transaction_dict
+            # )
+            #
+            # await uow.commit()
+            # return TransactionRead.model_validate(db_transaction,
+            #                                       from_attributes=True)
 
     async def calc_sum(
             self, uow: IUnitOfWork, user_id: int, **filters
