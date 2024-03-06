@@ -73,9 +73,7 @@ class Bank(Base):
         Index('banks_user_group_name_index', 'user_id', 'name', 'group',
               unique=True),
         CheckConstraint('credit_card_limit >= 0',
-                        name='check_credit_card_limit'),
-        CheckConstraint('credit_card_balance >= 0',
-                        name='check_credit_card_balance'),
+                        name='check_credit_card_limit')
     )
 
     repr_cols_num = 7
