@@ -67,8 +67,8 @@ app.include_router(
     prefix='/api'
 )
 
-if __name__ == '__main__':
-    if sys.platform == 'win32':
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-    uvicorn.run(app, use_colors=True)
+# if __name__ == '__main__':
+#     if sys.platform == 'win32':
+#         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+#
+#     uvicorn.run(app, use_colors=True)
