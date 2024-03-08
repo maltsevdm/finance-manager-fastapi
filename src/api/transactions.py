@@ -10,7 +10,7 @@ from src.schemas.transactions import (
     TransactionAdd, TransactionUpdate, TransactionRead, TransactionsFilters)
 from src.services.transactions import TransactionsService
 from src.utils import utils
-from src.utils.enum_classes import TransactionGroup
+from src.utils.enum_classes import TransactionGroup, TransactionStatus
 
 router = APIRouter(prefix='/transactions', tags=['Transaction'])
 
@@ -73,6 +73,7 @@ async def get_transactions(
         group: TransactionGroup | None = None,
         date_from: datetime.date | None = None,
         date_to: datetime.date | None = None,
+        status: TransactionStatus | None = None,
         user: User = Depends(current_active_user),
 ):
     if offset < 0:
@@ -93,6 +94,8 @@ async def get_transactions(
         filters['id'] = id
     if group:
         filters['group'] = group
+    if status:
+        filters['status'] = status
     res = await TransactionsService().get_all(
         uow, user_id=user.id, limit=limit, offset=offset, **filters)
     return res

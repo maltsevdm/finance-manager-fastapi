@@ -31,6 +31,7 @@ class TransactionGroup(enum.Enum):
 class TransactionStatus(enum.Enum):
     fact = 'fact'
     predict = 'predict'
+    was_predict = 'was_predict'
 
 
 if __name__ == '__main__':

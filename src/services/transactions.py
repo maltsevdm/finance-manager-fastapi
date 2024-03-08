@@ -50,7 +50,7 @@ class TransactionsService:
                 case TransactionGroup.income:
                     db_bank.increase_amount(transaction.amount)
 
-            transaction.status = TransactionStatus.fact
+            transaction.status = TransactionStatus.was_predict
 
         if transactions:
             await uow.commit()
@@ -103,7 +103,7 @@ class TransactionsService:
             db_transaction = await uow.transactions.drop_one(id=id,
                                                              user_id=user_id)
 
-            if db_transaction.status == TransactionStatus.fact:
+            if db_transaction.status != TransactionStatus.predict:
                 db_bank, db_dest = await self._get_bank_and_dest(
                     uow, db_transaction.group, db_transaction.bank_id,
                     db_transaction.destination_id, user_id)

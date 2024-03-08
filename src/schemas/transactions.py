@@ -3,7 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from src.utils.enum_classes import TransactionGroup
+from src.utils.enum_classes import TransactionGroup, TransactionStatus
 
 
 class TransactionAdd(BaseModel):
@@ -18,6 +18,7 @@ class TransactionAdd(BaseModel):
 class TransactionRead(TransactionAdd):
     id: int
     user_id: int
+    status: TransactionStatus
 
 
 class TransactionPrettyRead(BaseModel):
@@ -27,6 +28,7 @@ class TransactionPrettyRead(BaseModel):
     destination_name: str
     amount: float
     date: datetime.date
+    status: TransactionStatus
     note: str | None
 
 
@@ -45,3 +47,4 @@ class TransactionsFilters(BaseModel):
     destination_id: int | None = None
     date_from: datetime.date | None = None
     date_to: datetime.date | None = None
+    status: TransactionStatus | None = None
