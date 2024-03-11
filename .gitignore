@@ -1,9 +1,7 @@
 /venv
-/migrations
 .env
 .test.env
 .gitignore
 test.py
 config.py
-alembic.ini
 src/db/auth_data.py
