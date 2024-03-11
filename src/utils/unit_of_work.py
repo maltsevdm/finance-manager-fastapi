@@ -4,8 +4,8 @@ from src.db.database import async_session
 from src.repositories.banks import BanksRepository
 from src.repositories.categories import CategoriesRepository
 from src.repositories.debts import DebtsRepository
-from src.repositories.expense_income_categories import \
-    ExpenseIncomeCategoriesRepository
+from src.repositories.expense_income_categories import (
+    ExpenseIncomeCategoriesRepository)
 from src.repositories.transations import TransactionsRepository
 
 
@@ -37,7 +37,7 @@ class IUnitOfWork(ABC):
         pass
 
 
-class UnitOfWork:
+class UnitOfWork(IUnitOfWork):
     def __init__(self):
         self.session_factory = async_session
 

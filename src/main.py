@@ -9,6 +9,7 @@ from src.api.routers import all_routers
 from src.auth.manager import fastapi_users, auth_backend
 from src.schemas.users import UserRead, UserCreate, UserUpdate
 from src.db import core
+from src.services.transactions import TransactionsService
 
 app = FastAPI()
 router = APIRouter()
@@ -60,6 +61,7 @@ app.add_middleware(
 @router.on_event('startup')
 async def start_app():
     await core.create_tables()
+    asyncio.create_task(TransactionsService().observe_transactions())
 
 
 app.include_router(
@@ -67,8 +69,8 @@ app.include_router(
     prefix='/api'
 )
 
-# if __name__ == '__main__':
-#     if sys.platform == 'win32':
-#         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-#
-#     uvicorn.run(app, use_colors=True)
+if __name__ == '__main__':
+    if sys.platform == 'win32':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+    uvicorn.run(app, use_colors=True)

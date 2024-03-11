@@ -1,16 +1,17 @@
 import asyncio
 import datetime
-import sys
 
+import aioschedule
 from sqlalchemy import select, desc
 from sqlalchemy.orm import aliased
 
 from src.db.models import Bank, ExpenseIncomeCategory
+
 from src.schemas.transactions import (
     TransactionAdd, TransactionUpdate, TransactionPrettyRead)
 from src.utils.enum_classes import (
     TransactionGroup, ExpenseIncomeGroup, BankKindGroup, TransactionStatus)
-from src.utils.unit_of_work import IUnitOfWork
+from src.utils.unit_of_work import IUnitOfWork, UnitOfWork
 
 
 class TransactionsService:
@@ -29,31 +30,29 @@ class TransactionsService:
 
         return db_bank, db_destination
 
-    async def check_predict_transactions(self, uow: IUnitOfWork, user_id: int):
-        model = uow.transactions.model
-        query = (select(model)
-                 .filter_by(user_id=user_id, status=TransactionStatus.predict)
-                 .filter(model.date <= datetime.date.today()))
-        res = await uow.session.execute(query)
-        transactions = res.scalars().all()
-        for transaction in transactions:
-            db_bank, db_dest = await self._get_bank_and_dest(
-                uow, transaction.group, transaction.bank_id,
-                transaction.destination_id, user_id)
+    async def _check_predict_transactions(self):
+        uow = UnitOfWork()
+        async with uow:
+            transactions = await uow.transactions.update_predict_transactions()
 
-            match transaction.group:
-                case TransactionGroup.transfer:
-                    db_bank.decrease_amount(transaction.amount)
-                    db_dest.increase_amount(transaction.amount)
-                case TransactionGroup.expense:
-                    db_bank.decrease_amount(transaction.amount)
-                case TransactionGroup.income:
-                    db_bank.increase_amount(transaction.amount)
+            for transaction in transactions:
+                db_bank, db_dest = await self._get_bank_and_dest(
+                    uow, transaction.group, transaction.bank_id,
+                    transaction.destination_id, transaction.user_id)
 
-            transaction.status = TransactionStatus.was_predict
+                match transaction.group:
+                    case TransactionGroup.transfer:
+                        db_bank.decrease_amount(transaction.amount)
+                        db_dest.increase_amount(transaction.amount)
+                    case TransactionGroup.expense:
+                        db_bank.decrease_amount(transaction.amount)
+                    case TransactionGroup.income:
+                        db_bank.increase_amount(transaction.amount)
 
-        if transactions:
+                transaction.status = TransactionStatus.was_predict
+
             await uow.commit()
+            print(f'Transactions updated. Count: {len(transactions)}')
 
     async def add_one(
             self,
@@ -198,7 +197,6 @@ class TransactionsService:
             self, uow: IUnitOfWork, user_id: int, **filters
     ) -> float:
         async with uow:
-            await self.check_predict_transactions(uow, user_id)
             return await uow.transactions.calc_sum(user_id=user_id, **filters)
 
     async def get_all(
@@ -212,8 +210,6 @@ class TransactionsService:
             **filters
     ):
         async with uow:
-            await self.check_predict_transactions(uow, user_id)
-
             t = aliased(uow.transactions.model)
             b = aliased(uow.banks.model)
             eic = aliased(uow.ei_categories.model)
@@ -256,3 +252,10 @@ class TransactionsService:
             return [
                 TransactionPrettyRead.model_validate(x, from_attributes=True)
                 for x in transactions]
+
+    async def observe_transactions(self):
+        aioschedule.every().day.at('00:00').do(self._check_predict_transactions)
+
+        while True:
+            await aioschedule.run_pending()
+            await asyncio.sleep(0)

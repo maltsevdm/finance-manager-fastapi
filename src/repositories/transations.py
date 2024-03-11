@@ -1,10 +1,10 @@
 import datetime
 from typing import Optional, Union
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update
 
 from src.db.models import Transaction
-from src.utils.enum_classes import TransactionGroup
+from src.utils.enum_classes import TransactionGroup, TransactionStatus
 from src.utils.repository import SQLAlchemyRepository
 
 
@@ -48,3 +48,13 @@ class TransactionsRepository(SQLAlchemyRepository):
                  .limit(limit).offset(offset))
         res = await self.session.execute(query)
         return res.scalars().all()
+
+    async def update_predict_transactions(self):
+        stmt = (update(self.model)
+                .values(status=TransactionStatus.was_predict)
+                .filter_by(date=datetime.date.today(),
+                           status=TransactionStatus.predict)
+                .returning(self.model))
+        res = await self.session.execute(stmt)
+        return res.scalars().all()
+
